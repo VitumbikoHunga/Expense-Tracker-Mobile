@@ -83,7 +83,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                       return Card(
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                            backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                             child: const Icon(Icons.receipt_long, color: AppTheme.primaryColor),
                           ),
                           title: Text(receipt.title ?? receipt.vendor),
@@ -379,7 +379,7 @@ class _AddReceiptDialogState extends State<AddReceiptDialog> {
         Text(label, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           items: options.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
           onChanged: onChanged,
           decoration: InputDecoration(

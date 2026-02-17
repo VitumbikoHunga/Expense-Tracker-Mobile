@@ -398,7 +398,7 @@ class _GenerateInvoiceDialogState extends State<GenerateInvoiceDialog> {
         Text(label, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           items: options
               .map((e) => DropdownMenuItem(value: e, child: Text(e)))
               .toList(),

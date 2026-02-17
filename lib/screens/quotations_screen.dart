@@ -80,7 +80,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                       return Card(
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                            backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                             child: const Icon(Icons.request_quote, color: AppTheme.primaryColor),
                           ),
                           title: Text(quotation.quotationNumber),

@@ -63,9 +63,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: const [
-                      Logo(size: 48, initials: 'ET'),
+                  const Row(
+                    children: [
+                      Logo(size: 72, initials: 'ET'),
                       SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -140,11 +140,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             const SizedBox(height: 24),
                             _buildSectionCard(
                               title: 'Recent Activity',
-                              child: Column(
+                              child: const Column(
                                 children: [
-                                  const SizedBox(height: 40),
-                                  const Text('No recent transactions', style: TextStyle(color: Colors.grey)),
-                                  const SizedBox(height: 40),
+                                  SizedBox(height: 40),
+                                  Text('No recent transactions', style: TextStyle(color: Colors.grey)),
+                                  SizedBox(height: 40),
                                 ],
                               ),
                             ),
@@ -168,7 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
@@ -185,7 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
             child: Icon(icon, color: color, size: 20),
           ),
         ],
@@ -248,7 +248,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: const Color(0xFF10B981),
             barWidth: 3,
             dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(show: true, color: const Color(0xFF10B981).withOpacity(0.1)),
+            belowBarData: BarAreaData(show: true, color: const Color(0xFF10B981).withValues(alpha: 0.1)),
           ),
         ],
       ),

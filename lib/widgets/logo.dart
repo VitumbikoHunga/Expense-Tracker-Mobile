@@ -7,7 +7,7 @@ class Logo extends StatelessWidget {
 
   const Logo({
     Key? key,
-    this.size = 56,
+    this.size = 72,
     this.initials = 'ET',
   }) : super(key: key);
 

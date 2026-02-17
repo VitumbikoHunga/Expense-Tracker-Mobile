@@ -320,7 +320,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       value: value,
       onChanged: onChanged,
       contentPadding: EdgeInsets.zero,
-      activeColor: const Color(0xFF1E3A5F),
+      activeThumbColor: const Color(0xFF1E3A5F),
     );
   }
 
