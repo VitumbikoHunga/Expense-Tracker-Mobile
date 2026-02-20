@@ -66,7 +66,7 @@ class _InstallmentsScreenState extends State<InstallmentsScreen> {
                   subtitle: Text(
                       'Client: ${inv.clientName}\nPaid: MK ${paid.toStringAsFixed(2)}\nRemaining: MK ${remaining.toStringAsFixed(2)}'),
                   isThreeLine: true,
-                  trailing: Icon(Icons.chevron_right),
+                  trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showInvoiceDetails(inv),
                 ),
               );
@@ -155,9 +155,11 @@ class InstallmentDetailDialog extends StatelessWidget {
   }
 
   void _showAddPaymentDialog(BuildContext context, double maxAmount) {
-    final _vendorController = TextEditingController();
-    final _amountController = TextEditingController();
+    final vendorController = TextEditingController();
+    final amountController = TextEditingController();
     DateTime selectedDate = DateTime.now();
+    final authProv = context.read<AuthProvider>();
+    final expenseProvider = context.read<ExpenseProvider>();
 
     showDialog(
         context: context,
@@ -169,11 +171,11 @@ class InstallmentDetailDialog extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
-                    controller: _vendorController,
+                    controller: vendorController,
                     decoration: const InputDecoration(labelText: 'Vendor'),
                   ),
                   TextField(
-                    controller: _amountController,
+                    controller: amountController,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(
@@ -188,7 +190,7 @@ class InstallmentDetailDialog extends StatelessWidget {
                             initialDate: selectedDate,
                             firstDate: DateTime(2000),
                             lastDate: DateTime(2100));
-                        if (date != null) selectedDate = date;
+                        if (date != null && ctx.mounted) selectedDate = date;
                       },
                       child: const Text('Select Date')),
                 ],
@@ -200,44 +202,34 @@ class InstallmentDetailDialog extends StatelessWidget {
                   child: const Text('Cancel')),
               ElevatedButton(
                   onPressed: () async {
-                    final amount = double.tryParse(_amountController.text) ?? 0;
+                    final amount = double.tryParse(amountController.text) ?? 0;
                     if (amount <= 0 || amount > maxAmount) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              'Amount must be between 0 and ${maxAmount.toStringAsFixed(2)}')));
+                      if (ctx.mounted) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                            content: Text(
+                                'Amount must be between 0 and ${maxAmount.toStringAsFixed(2)}')));
+                      }
                       return;
                     }
-                    final authProv = context.read<AuthProvider>();
                     final receipt = Receipt(
                       id: 'r_${DateTime.now().millisecondsSinceEpoch}',
-                      vendor: _vendorController.text,
+                      vendor: vendorController.text,
                       amount: amount,
                       category: invoice.invoiceNumber,
                       date: selectedDate,
                       userId: authProv.user?.id ?? 'unknown',
                       invoiceId: invoice.id,
                     );
-                    final success = await context
-                        .read<ExpenseProvider>()
-                        .createReceipt(receipt);
+                    final success = await expenseProvider.createReceipt(receipt);
+                    if (!ctx.mounted) return;
                     if (success) {
                       Navigator.pop(ctx); // close add dialog
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(ctx).showSnackBar(
                           const SnackBar(content: Text('Payment recorded')));
-                      // after saving we may need to dismiss the detail window if invoice is complete
-                      final expProv = context.read<ExpenseProvider>();
-                      final paid = expProv.amountPaidForInvoice(invoice.id);
-                      if (paid >= invoice.amount) {
-                        // pop the surrounding dialog
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Text(
-                                'Invoice completed and moved to Invoices page')));
-                      }
                       // detail dialog listens via Consumer so it will refresh if still open
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(context.read<ExpenseProvider>().error ??
+                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                          content: Text(expenseProvider.error ??
                               'Failed to save payment')));
                     }
                   },

@@ -79,7 +79,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                 pw.Spacer(),
                 pw.Text(
                   'Generated on ${DateFormat('MMM dd, yyyy – kk:mm').format(DateTime.now())}',
-                  style: pw.TextStyle(fontSize: 8, color: PdfColors.grey),
+                  style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
                 ),
               ],
             ),
@@ -144,17 +144,20 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
         ) ??
         false;
     if (!confirmed) return;
-    final result = await context.read<ExpenseProvider>().deleteReceipt(id);
+    final expenseProvider = context.read<ExpenseProvider>();
+    final budgetProvider = context.read<BudgetProvider>();
+    final result = await expenseProvider.deleteReceipt(id);
+    if (!mounted) return;
     final success = result['success'] as bool? ?? false;
     final deletedAmount = result['amount'] as double? ?? 0;
     final budgetId = result['budgetId'] as String?;
     if (success && budgetId != null && budgetId.isNotEmpty) {
-      context.read<BudgetProvider>().removeFromBudget(budgetId, deletedAmount);
+      budgetProvider.removeFromBudget(budgetId, deletedAmount);
     }
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(success
             ? 'Receipt deleted'
-            : 'Failed to delete receipt: ${context.read<ExpenseProvider>().error}')));
+            : 'Failed to delete receipt: ${expenseProvider.error}')));
   }
 
   @override
@@ -628,7 +631,7 @@ class _AddReceiptDialogState extends State<AddReceiptDialog> {
                     style: TextStyle(color: Colors.grey[600])),
               )
             : DropdownButtonFormField<String>(
-                value: value,
+                initialValue: value,
                 items: options
                     .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                     .toList(),
@@ -828,12 +831,14 @@ class _AddReceiptDialogState extends State<AddReceiptDialog> {
 
       final success = await expenseProvider.createReceipt(receipt);
 
+      if (!mounted) return;
+      
+      final budgetProvider = context.read<BudgetProvider>();
+
       if (success) {
         // update budget totals if linked
         if (receipt.budgetId != null && receipt.budgetId!.isNotEmpty) {
-          context
-              .read<BudgetProvider>()
-              .addToBudget(receipt.budgetId!, receipt.amount);
+          budgetProvider.addToBudget(receipt.budgetId!, receipt.amount);
         }
       }
 

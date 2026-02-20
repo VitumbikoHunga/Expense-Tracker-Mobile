@@ -93,7 +93,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
               if (!mounted) return;
 
               if (success) {
-                Navigator.of(dialogContext).pop();
+                Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Budget set successfully')),
                 );
@@ -223,7 +223,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                     LayoutBuilder(builder: (ctx, constraints) {
                       final screenWidth = constraints.maxWidth;
                       final columns = screenWidth > 600 ? 3 : 2;
-                      final spacing = 12.0;
+                      const spacing = 12.0;
                       final itemWidth =
                           (screenWidth - (columns + 1) * spacing) / columns;
 
@@ -437,7 +437,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
             : receipts
                 .map((r) => ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(r.vendor ?? r.title ?? 'Receipt'),
+                      title: Text(r.vendor.isNotEmpty ? r.vendor : (r.title ?? 'Receipt')),
                       subtitle: Text(
                           'MK${r.amount.toStringAsFixed(2)}  •  ${DateFormat.yMMMd().format(r.date)}'),
                     ))
