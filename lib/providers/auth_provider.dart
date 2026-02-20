@@ -5,7 +5,7 @@ import '../config/constants.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
-  
+
   User? _user;
   String? _token;
   bool _isLoading = false;
@@ -27,30 +27,46 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    try {
-      // Mock login for demo purposes
-      await Future.delayed(const Duration(seconds: 1));
-      
-      if (email.isEmpty || password.isEmpty) {
-        _error = 'Email and password are required';
-        _isLoading = false;
-        notifyListeners();
-        return false;
-      }
+    if (email.isEmpty || password.isEmpty) {
+      _error = 'Email and password are required';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
 
-      // Create a mock token and user
-      _token = 'mock_token_${DateTime.now().millisecondsSinceEpoch}';
-      await _apiService.setToken(_token!);
+    // shortcut when working against mock backend
+    if (AppConstants.useMockApi) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      _token = 'mock-token';
       _user = User(
-        id: 'user_123',
-        name: email.split('@')[0],
+        id: '1',
+        name: 'Mock User',
         email: email,
-        role: 'user',
         isActive: true,
-        createdAt: DateTime.now(),
       );
       _isLoading = false;
-      _error = null;
+      notifyListeners();
+      return true;
+    }
+
+    try {
+      final response = await _apiService.post(
+        AppConstants.loginEndpoint,
+        data: {'email': email, 'password': password},
+        requiresAuth: false,
+      );
+
+      // expect response to contain token and user
+      if (response is Map<String, dynamic>) {
+        _token = response['token'] ?? response['accessToken'];
+        if (_token != null) {
+          await _apiService.setToken(_token!);
+        }
+        final userData = response['user'] ?? response;
+        _user = User.fromJson(userData as Map<String, dynamic>);
+      }
+
+      _isLoading = false;
       notifyListeners();
       return true;
     } catch (e) {
@@ -66,44 +82,57 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    try {
-      // Mock registration for demo purposes
-      await Future.delayed(const Duration(seconds: 1));
-      
-      if (name.isEmpty || email.isEmpty || password.isEmpty) {
-        _error = 'All fields are required';
-        _isLoading = false;
-        notifyListeners();
-        return false;
-      }
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      _error = 'All fields are required';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
 
-      if (!email.contains('@')) {
-        _error = 'Please enter a valid email';
-        _isLoading = false;
-        notifyListeners();
-        return false;
-      }
+    if (!email.contains('@')) {
+      _error = 'Please enter a valid email';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
 
-      if (password.length < 6) {
-        _error = 'Password must be at least 6 characters';
-        _isLoading = false;
-        notifyListeners();
-        return false;
-      }
+    if (password.length < 6) {
+      _error = 'Password must be at least 6 characters';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
 
-      // Create a mock token and user
-      _token = 'mock_token_${DateTime.now().millisecondsSinceEpoch}';
-      await _apiService.setToken(_token!);
+    // mock branch
+    if (AppConstants.useMockApi) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      _token = 'mock-token';
       _user = User(
-        id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+        id: '1',
         name: name,
         email: email,
-        role: 'user',
         isActive: true,
-        createdAt: DateTime.now(),
       );
       _isLoading = false;
-      _error = null;
+      notifyListeners();
+      return true;
+    }
+
+    try {
+      final response = await _apiService.post(
+        AppConstants.registerEndpoint,
+        data: {'name': name, 'email': email, 'password': password},
+        requiresAuth: false,
+      );
+      if (response is Map<String, dynamic>) {
+        _token = response['token'] ?? response['accessToken'];
+        if (_token != null) {
+          await _apiService.setToken(_token!);
+        }
+        final userData = response['user'] ?? response;
+        _user = User.fromJson(userData as Map<String, dynamic>);
+      }
+      _isLoading = false;
       notifyListeners();
       return true;
     } catch (e) {
@@ -122,6 +151,11 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> getProfile() async {
+    if (AppConstants.useMockApi) {
+      // leave existing mock user as-is
+      return;
+    }
+
     try {
       final response = await _apiService.get(AppConstants.getUserEndpoint);
       _user = User.fromJson(response);

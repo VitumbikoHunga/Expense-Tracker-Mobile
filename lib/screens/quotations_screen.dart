@@ -52,48 +52,70 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
             onRefresh: () async {
               await expenseProvider.fetchQuotations();
             },
-            child: expenseProvider.quotations.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'No quotations yet',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text('Create your first quotation to get started'),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: _showCreateQuotationDialog,
-                          icon: const Icon(Icons.add),
-                          label: const Text('Create Quotation'),
-                        ),
-                      ],
+            child: Column(
+              children: [
+                if (expenseProvider.error != null)
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: Text(
+                      'Error: ${expenseProvider.error}',
+                      style: const TextStyle(color: Colors.red),
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: expenseProvider.quotations.length,
-                    itemBuilder: (context, index) {
-                      final quotation = expenseProvider.quotations[index];
-                      return Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-                            child: const Icon(Icons.request_quote, color: AppTheme.primaryColor),
-                          ),
-                          title: Text(quotation.quotationNumber),
-                          subtitle: Text('${quotation.clientName} • ${quotation.status}'),
-                          trailing: Text(
-                            'MK ${quotation.amount.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-                          ),
-                        ),
-                      );
-                    },
                   ),
-          );
+                Expanded(
+                  child: expenseProvider.quotations.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'No quotations yet',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                  'Create your first quotation to get started'),
+                              const SizedBox(height: 24),
+                              ElevatedButton.icon(
+                                onPressed: _showCreateQuotationDialog,
+                                icon: const Icon(Icons.add),
+                                label: const Text('Create Quotation'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: expenseProvider.quotations.length,
+                          itemBuilder: (context, index) {
+                            final quotation = expenseProvider.quotations[index];
+                            return Card(
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: AppTheme.primaryColor
+                                      .withValues(alpha: 0.1),
+                                  child: const Icon(Icons.request_quote,
+                                      color: AppTheme.primaryColor),
+                                ),
+                                title: Text(quotation.quotationNumber),
+                                subtitle: Text(
+                                    '${quotation.clientName} • ${quotation.status}'),
+                                trailing: Text(
+                                  'MK ${quotation.amount.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.primaryColor),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ], // end Column children
+            ), // end Column
+          ); // end RefreshIndicator
         },
       ),
     );
@@ -114,7 +136,7 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   final List<QuotationItemRow> _items = [];
   bool _isCapturingLocation = false;
 
@@ -150,15 +172,39 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
       }
       Position position = await Geolocator.getCurrentPosition();
       setState(() {
-        _locationController.text = '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
+        _locationController.text =
+            '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       setState(() => _isCapturingLocation = false);
     }
+  }
+
+  Widget _responsiveRow(List<Widget> children) {
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 500) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children
+              .map((w) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: w,
+                  ))
+              .toList(),
+        );
+      }
+      final spaced = <Widget>[];
+      for (var i = 0; i < children.length; i++) {
+        spaced.add(Expanded(child: children[i]));
+        if (i < children.length - 1) spaced.add(const SizedBox(width: 16));
+      }
+      return Row(children: spaced);
+    });
   }
 
   @override
@@ -168,7 +214,8 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         width: double.infinity,
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+        constraints:
+            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
         child: Column(
           children: [
             Padding(
@@ -176,8 +223,12 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Create Quotation', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                  const Text('Create Quotation',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close)),
                 ],
               ),
             ),
@@ -190,46 +241,52 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(child: _buildTextField(_clientNameController, 'Client Name *', required: true)),
-                          const SizedBox(width: 16),
-                          Expanded(child: _buildTextField(_clientEmailController, 'Client Email')),
-                        ],
-                      ),
+                      _responsiveRow([
+                        _buildTextField(_clientNameController, 'Client Name *',
+                            required: true),
+                        _buildTextField(_clientEmailController, 'Client Email'),
+                      ]),
                       const SizedBox(height: 16),
-                      _buildTextField(_descriptionController, 'Description', maxLines: 3),
+                      _buildTextField(_descriptionController, 'Description',
+                          maxLines: 3),
                       const SizedBox(height: 16),
-                      Text('Location (Optional)', style: Theme.of(context).textTheme.bodySmall),
+                      Text('Location (Optional)',
+                          style: Theme.of(context).textTheme.bodySmall),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _locationController,
-                              decoration: InputDecoration(
-                                hintText: 'e.g., Main Street, City',
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
+                      _responsiveRow([
+                        TextFormField(
+                          controller: _locationController,
+                          decoration: InputDecoration(
+                            hintText: 'e.g., Main Street, City',
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
                           ),
-                          const SizedBox(width: 8),
-                          OutlinedButton.icon(
-                            onPressed: _isCapturingLocation ? null : _captureLocation,
-                            icon: _isCapturingLocation 
-                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        ),
+                        OutlinedButton.icon(
+                          onPressed:
+                              _isCapturingLocation ? null : _captureLocation,
+                          icon: _isCapturingLocation
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2))
                               : const Icon(Icons.location_on, size: 18),
-                            label: const Text('Capture'),
-                          ),
-                        ],
-                      ),
+                          label: const Text('Capture'),
+                        ),
+                      ]),
                       const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Line Items', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextButton.icon(onPressed: _addItem, icon: const Icon(Icons.add), label: const Text('Add Item')),
+                          const Text('Line Items',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextButton.icon(
+                              onPressed: _addItem,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add Item')),
                         ],
                       ),
                       ..._items,
@@ -238,11 +295,13 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
                         alignment: Alignment.centerRight,
                         child: Text(
                           'Total: MK ${_totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildTextField(_notesController, 'Additional notes', maxLines: 3),
+                      _buildTextField(_notesController, 'Additional notes',
+                          maxLines: 3),
                       const SizedBox(height: 24),
                       Row(
                         children: [
@@ -255,9 +314,11 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A5F)),
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1E3A5F)),
                               onPressed: _submit,
-                              child: const Text('Create Quotation', style: TextStyle(color: Colors.white)),
+                              child: const Text('Create Quotation',
+                                  style: TextStyle(color: Colors.white)),
                             ),
                           ),
                         ],
@@ -273,7 +334,8 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, {bool required = false, int maxLines = 1}) {
+  Widget _buildTextField(TextEditingController controller, String label,
+      {bool required = false, int maxLines = 1}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -283,10 +345,13 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
           controller: controller,
           maxLines: maxLines,
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          validator: required ? (val) => val == null || val.isEmpty ? 'Required' : null : null,
+          validator: required
+              ? (val) => val == null || val.isEmpty ? 'Required' : null
+              : null,
         ),
       ],
     );
@@ -296,10 +361,11 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
     if (_formKey.currentState!.validate()) {
       final authProvider = context.read<AuthProvider>();
       final expenseProvider = context.read<ExpenseProvider>();
-      
+
       final quotation = Quotation(
         id: 'qt_${DateTime.now().millisecondsSinceEpoch}',
-        quotationNumber: 'QT-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+        quotationNumber:
+            'QT-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
         clientName: _clientNameController.text,
         clientEmail: _clientEmailController.text,
         description: _descriptionController.text,
@@ -317,7 +383,8 @@ class _CreateQuotationDialogState extends State<CreateQuotationDialog> {
       if (mounted) {
         if (success) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Quotation created successfully')));
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Quotation created successfully')));
         }
       }
     }
@@ -328,10 +395,13 @@ class QuotationItemRow extends StatelessWidget {
   final VoidCallback onChanged;
   final Function(QuotationItemRow) onRemove;
   final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController quantityController = TextEditingController(text: '1');
-  final TextEditingController unitPriceController = TextEditingController(text: '0');
+  final TextEditingController quantityController =
+      TextEditingController(text: '1');
+  final TextEditingController unitPriceController =
+      TextEditingController(text: '0');
 
-  QuotationItemRow({super.key, required this.onChanged, required this.onRemove}) {
+  QuotationItemRow(
+      {super.key, required this.onChanged, required this.onRemove}) {
     quantityController.addListener(onChanged);
     unitPriceController.addListener(onChanged);
   }
@@ -361,7 +431,9 @@ class QuotationItemRow extends StatelessWidget {
             flex: 3,
             child: TextField(
               controller: descriptionController,
-              decoration: const InputDecoration(hintText: 'Description', contentPadding: EdgeInsets.symmetric(horizontal: 8)),
+              decoration: const InputDecoration(
+                  hintText: 'Description',
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8)),
             ),
           ),
           const SizedBox(width: 8),
@@ -370,7 +442,8 @@ class QuotationItemRow extends StatelessWidget {
             child: TextField(
               controller: quantityController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8)),
+              decoration: const InputDecoration(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8)),
             ),
           ),
           const SizedBox(width: 8),
@@ -379,12 +452,18 @@ class QuotationItemRow extends StatelessWidget {
             child: TextField(
               controller: unitPriceController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8)),
+              decoration: const InputDecoration(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8)),
             ),
           ),
           const SizedBox(width: 8),
-          Text('MK${total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          IconButton(onPressed: () => onRemove(this), icon: const Icon(Icons.delete_outline, color: Colors.grey, size: 20)),
+          Text('MK${total.toStringAsFixed(2)}',
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          IconButton(
+              onPressed: () => onRemove(this),
+              icon: const Icon(Icons.delete_outline,
+                  color: Colors.grey, size: 20)),
         ],
       ),
     );

@@ -86,7 +86,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E3A5F),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
             ),
           ),
@@ -108,7 +109,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   style: TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 24),
-
                 if (_isAddingCategory) ...[
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -126,15 +126,18 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             decoration: const InputDecoration(
                               hintText: 'Enter category name',
                               border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                              contentPadding:
+                                  EdgeInsets.symmetric(horizontal: 12),
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         ElevatedButton(
                           onPressed: _handleAddCategory,
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A5F)),
-                          child: const Text('Add', style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1E3A5F)),
+                          child: const Text('Add',
+                              style: TextStyle(color: Colors.white)),
                         ),
                         const SizedBox(width: 8),
                         OutlinedButton(
@@ -146,7 +149,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   ),
                   const SizedBox(height: 24),
                 ],
-
                 const Text(
                   'Default Categories',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -155,8 +157,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 120,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                     childAspectRatio: 1.2,
@@ -170,14 +172,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     );
                   },
                 ),
-
                 const SizedBox(height: 32),
                 const Text(
                   'Custom Categories',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                
                 if (categoryProvider.categories.isEmpty)
                   Center(
                     child: Container(
@@ -190,11 +190,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.label_outline, size: 48, color: Colors.grey.shade300),
+                          Icon(Icons.label_outline,
+                              size: 48, color: Colors.grey.shade300),
                           const SizedBox(height: 16),
                           const Text(
                             'No custom categories yet',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           const Text(
                             'Create custom categories to organize your transactions',
@@ -218,7 +220,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
@@ -245,7 +248,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
   }
 
-  Widget _buildCategoryCard(String name, IconData icon, String subtitle, {VoidCallback? onLongPress}) {
+  Widget _buildCategoryCard(String name, IconData icon, String subtitle,
+      {VoidCallback? onLongPress}) {
     return InkWell(
       onLongPress: onLongPress,
       child: Container(

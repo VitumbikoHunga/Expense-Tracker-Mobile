@@ -29,7 +29,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   void _showGenerateInvoiceDialog() {
     showDialog(
       context: context,
-      builder: (context) => const GenerateInvoiceDialog(),
+      builder: (context) =>
+          GenerateInvoiceDialog(), // fresh instance to reset fields
     );
   }
 
@@ -55,68 +56,84 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
             onRefresh: () async {
               await expenseProvider.fetchInvoices();
             },
-            child: expenseProvider.invoices.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.description_outlined,
-                          size: 64,
-                          color: Colors.grey[300],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No invoices found',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
+            child: Column(
+              children: [
+                if (expenseProvider.error != null)
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: Text(
+                      'Error: ${expenseProvider.error}',
+                      style: const TextStyle(color: Colors.red),
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: expenseProvider.invoices.length,
-                    itemBuilder: (context, index) {
-                      final invoice = expenseProvider.invoices[index];
-                      return Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor:
-                                AppTheme.primaryColor.withValues(alpha: 0.1),
-                            child: Text(
-                              invoice.clientName.isNotEmpty
-                                  ? invoice.clientName.substring(0, 1)
-                                  : '?',
-                              style:
-                                  const TextStyle(color: AppTheme.primaryColor),
-                            ),
-                          ),
-                          title: Text(invoice.invoiceNumber),
-                          subtitle:
-                              Text('${invoice.clientName} • ${invoice.status}'),
-                          trailing: Column(
+                  ),
+                Expanded(
+                  child: expenseProvider.invoices.isEmpty
+                      ? Center(
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
-                                'MK ${invoice.amount.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryColor,
-                                ),
+                              Icon(
+                                Icons.description_outlined,
+                                size: 64,
+                                color: Colors.grey[300],
                               ),
+                              const SizedBox(height: 16),
                               Text(
-                                DateFormat('MMM dd, yyyy')
-                                    .format(invoice.dueDate),
-                                style: Theme.of(context).textTheme.bodySmall,
+                                'No invoices found',
+                                style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ],
                           ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: expenseProvider.invoices.length,
+                          itemBuilder: (context, index) {
+                            final invoice = expenseProvider.invoices[index];
+                            return Card(
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: AppTheme.primaryColor
+                                      .withValues(alpha: 0.1),
+                                  child: Text(
+                                    invoice.clientName.isNotEmpty
+                                        ? invoice.clientName.substring(0, 1)
+                                        : '?',
+                                    style: const TextStyle(
+                                        color: AppTheme.primaryColor),
+                                  ),
+                                ),
+                                title: Text(invoice.invoiceNumber),
+                                subtitle: Text(
+                                    '${invoice.clientName} • ${invoice.status}'),
+                                trailing: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'MK ${invoice.amount.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                    Text(
+                                      DateFormat('MMM dd, yyyy')
+                                          .format(invoice.dueDate),
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-          );
+                ), // end Expanded
+              ], // end Column children
+            ), // end Column
+          ); // end RefreshIndicator
         },
       ),
     );
@@ -136,7 +153,6 @@ class _GenerateInvoiceDialogState extends State<GenerateInvoiceDialog> {
       text: 'INV-${DateFormat('HHmmss').format(DateTime.now())}');
   final _clientNameController = TextEditingController();
   final _clientEmailController = TextEditingController();
-  final _budgetIdController = TextEditingController();
   final _notesController = TextEditingController();
 
   String _status = 'Draft';
@@ -218,6 +234,31 @@ class _GenerateInvoiceDialogState extends State<GenerateInvoiceDialog> {
     }
   }
 
+  Widget _responsiveRow(List<Widget> children) {
+    // helper used in invoice form and similar dialogs to allow auto wrapping
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 500) {
+        // stack vertically on narrow screens
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children
+              .map((w) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: w,
+                  ))
+              .toList(),
+        );
+      }
+      // row with spacing otherwise
+      final spaced = <Widget>[];
+      for (var i = 0; i < children.length; i++) {
+        spaced.add(Expanded(child: children[i]));
+        if (i < children.length - 1) spaced.add(const SizedBox(width: 16));
+      }
+      return Row(children: spaced);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -251,56 +292,51 @@ class _GenerateInvoiceDialogState extends State<GenerateInvoiceDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                                _invoiceNumberController, 'Invoice Number'),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildDropdownField(
-                                'Status', ['Draft', 'Pending', 'Paid'], _status,
-                                (val) {
-                              setState(() => _status = val!);
-                            }),
-                          ),
-                        ],
-                      ),
+                      _responsiveRow([
+                        _buildTextField(
+                            _invoiceNumberController, 'Invoice Number'),
+                        _buildDropdownField(
+                            'Status',
+                            [
+                              'Draft',
+                              'Pending',
+                              'Paid',
+                              'Installments',
+                              'Overdue'
+                            ],
+                            _status, (val) {
+                          setState(() => _status = val!);
+                        }),
+                      ]),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                              child: _buildTextField(
-                                  _clientNameController, 'Client Name *',
-                                  required: true)),
-                          const SizedBox(width: 16),
-                          Expanded(
-                              child: _buildTextField(
-                                  _clientEmailController, 'Client Email')),
-                        ],
-                      ),
+                      _responsiveRow([
+                        _buildTextField(_clientNameController, 'Client Name *',
+                            required: true),
+                        _buildTextField(_clientEmailController, 'Client Email'),
+                      ]),
                       const SizedBox(height: 16),
-                      _buildTextField(
-                          _budgetIdController, 'Budget ID (optional)'),
+                      _responsiveRow([
+                        _buildDatePicker('Invoice Date *', _invoiceDate,
+                            (date) {
+                          setState(() => _invoiceDate = date);
+                        }),
+                        _buildDatePicker('Due Date', _dueDate, (date) {
+                          setState(() => _dueDate = date);
+                        }),
+                      ]),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDatePicker(
-                                'Invoice Date *', _invoiceDate, (date) {
-                              setState(() => _invoiceDate = date);
-                            }),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child:
-                                _buildDatePicker('Due Date', _dueDate, (date) {
-                              setState(() => _dueDate = date);
-                            }),
-                          ),
-                        ],
-                      ),
+                      // time component for invoice date (similar to receipts)
+                      _buildTimePicker('Invoice Time', _invoiceDate, (time) {
+                        setState(() {
+                          _invoiceDate = DateTime(
+                            _invoiceDate.year,
+                            _invoiceDate.month,
+                            _invoiceDate.day,
+                            time.hour,
+                            time.minute,
+                          );
+                        });
+                      }),
                       const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -390,25 +426,38 @@ class _GenerateInvoiceDialogState extends State<GenerateInvoiceDialog> {
     );
   }
 
-  Widget _buildDropdownField(String label, List<String> options, String value,
+  Widget _buildDropdownField(String label, List<String> options, String? value,
       Function(String?) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 4),
-        DropdownButtonFormField<String>(
-          initialValue: value,
-          items: options
-              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-              .toList(),
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        ),
+        options.isEmpty
+            ? Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('No options available',
+                    style: TextStyle(color: Colors.grey[600])),
+              )
+            : DropdownButtonFormField<String>(
+                value: (value == null || value.isEmpty) ? null : value,
+                hint: const Text('Select'),
+                items: options
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: onChanged,
+                decoration: InputDecoration(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
       ],
     );
   }
@@ -443,6 +492,40 @@ class _GenerateInvoiceDialogState extends State<GenerateInvoiceDialog> {
                     ? DateFormat('MM/dd/yyyy').format(selectedDate)
                     : 'mm/dd/yyyy'),
                 const Icon(Icons.calendar_today, size: 16),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimePicker(
+      String label, DateTime selected, Function(TimeOfDay) onPicked) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 4),
+        InkWell(
+          onTap: () async {
+            final time = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay.fromDateTime(selected),
+            );
+            if (time != null) onPicked(time);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(TimeOfDay.fromDateTime(selected).format(context)),
+                const Icon(Icons.access_time, size: 16),
               ],
             ),
           ),
@@ -517,7 +600,7 @@ class _GenerateInvoiceDialogState extends State<GenerateInvoiceDialog> {
         invoiceNumber: _invoiceNumberController.text,
         clientName: _clientNameController.text,
         clientEmail: _clientEmailController.text,
-        budgetId: _budgetIdController.text,
+        budgetId: null,
         amount: _totalAmount,
         status: _status.toLowerCase(),
         invoiceDate: _invoiceDate,
@@ -580,46 +663,49 @@ class InvoiceItemRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(
-                  hintText: 'Description',
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8)),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 200,
+              child: TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(
+                    hintText: 'Description',
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8)),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 1,
-            child: TextField(
-              controller: quantityController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8)),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 80,
+              child: TextField(
+                controller: quantityController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8)),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 2,
-            child: TextField(
-              controller: unitPriceController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8)),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 120,
+              child: TextField(
+                controller: unitPriceController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8)),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text('MK${total.toStringAsFixed(2)}',
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          IconButton(
-              onPressed: () => onRemove(this),
-              icon: const Icon(Icons.delete_outline,
-                  color: Colors.grey, size: 20)),
-        ],
+            const SizedBox(width: 8),
+            Text('MK${total.toStringAsFixed(2)}',
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            IconButton(
+                onPressed: () => onRemove(this),
+                icon: const Icon(Icons.delete_outline,
+                    color: Colors.grey, size: 20)),
+          ],
+        ),
       ),
     );
   }

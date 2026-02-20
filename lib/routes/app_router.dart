@@ -9,6 +9,7 @@ import '../screens/invoices_screen.dart';
 import '../screens/budgets_screen.dart';
 import '../screens/categories_screen.dart';
 import '../screens/quotations_screen.dart';
+import '../screens/installments_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/reports_screen.dart';
 
@@ -70,6 +71,11 @@ class AppRouter {
         path: '/quotations',
         name: 'quotations',
         builder: (context, state) => const QuotationsScreen(),
+      ),
+      GoRoute(
+        path: '/installments',
+        name: 'installments',
+        builder: (context, state) => const InstallmentsScreen(),
       ),
       GoRoute(
         path: '/reports',

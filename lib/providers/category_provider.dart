@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/category.dart';
+import '../services/api_service.dart';
+import '../config/constants.dart';
 
 class CategoryProvider extends ChangeNotifier {
   List<Category> _categories = [];
@@ -13,60 +15,63 @@ class CategoryProvider extends ChangeNotifier {
   Future<void> fetchCategories() async {
     _isLoading = true;
     _error = null;
+    notifyListeners();
 
-    try {
-      // Mock data for demo purposes
-      await Future.delayed(const Duration(milliseconds: 500));
-      
+    if (AppConstants.useMockApi) {
+      await Future.delayed(const Duration(milliseconds: 200));
       _categories = [
         Category(
-          id: '1',
-          name: 'Food',
-          icon: 'restaurant',
-          color: '#63BE7B',
-          userId: 'user_123',
-          createdAt: DateTime.now().subtract(const Duration(days: 30)),
-        ),
+            id: 'c1',
+            name: 'Food',
+            icon: 'restaurant',
+            color: '#FF5722',
+            userId: '1'),
         Category(
-          id: '2',
-          name: 'Transport',
-          icon: 'directions_car',
-          color: '#FFA500',
-          userId: 'user_123',
-          createdAt: DateTime.now().subtract(const Duration(days: 20)),
-        ),
-        Category(
-          id: '3',
-          name: 'Entertainment',
-          icon: 'local_movies',
-          color: '#8E7CC3',
-          userId: 'user_123',
-          createdAt: DateTime.now().subtract(const Duration(days: 15)),
-        ),
+            id: 'c2',
+            name: 'Transport',
+            icon: 'directions_car',
+            color: '#2196F3',
+            userId: '1'),
       ];
       _isLoading = false;
       notifyListeners();
+      return;
+    }
+
+    try {
+      final response = await ApiService().get(AppConstants.categoriesEndpoint);
+      if (response is List) {
+        _categories = response
+            .map((e) => Category.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else if (response is Map && response['data'] is List) {
+        _categories = (response['data'] as List)
+            .map((e) => Category.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        _categories = [];
+      }
     } catch (e) {
       _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<bool> createCategory(String name, String icon, String color) async {
     try {
-      await Future.delayed(const Duration(milliseconds: 300));
-      
-      final newCategory = Category(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        icon: icon,
-        color: color,
-        userId: 'user_123',
-        createdAt: DateTime.now(),
+      final data = {
+        'name': name,
+        'icon': icon,
+        'color': color,
+      };
+      final response = await ApiService().post(
+        AppConstants.categoriesEndpoint,
+        data: data,
       );
-      
-      _categories.insert(0, newCategory);
+      final created = Category.fromJson(response as Map<String, dynamic>);
+      _categories.insert(0, created);
       notifyListeners();
       return true;
     } catch (e) {
@@ -78,7 +83,8 @@ class CategoryProvider extends ChangeNotifier {
 
   Future<bool> deleteCategory(String categoryId) async {
     try {
-      await Future.delayed(const Duration(milliseconds: 300));
+      await ApiService()
+          .delete('${AppConstants.categoriesEndpoint}/$categoryId');
       _categories.removeWhere((cat) => cat.id == categoryId);
       notifyListeners();
       return true;

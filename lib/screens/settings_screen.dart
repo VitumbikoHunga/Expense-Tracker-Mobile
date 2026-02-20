@@ -11,7 +11,8 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProviderStateMixin {
+class _SettingsScreenState extends State<SettingsScreen>
+    with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late TabController _tabController;
 
@@ -92,23 +93,30 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          const Text('Manage your account and system settings', style: TextStyle(color: Colors.grey)),
+          const Text('Settings',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text('Manage your account and system settings',
+              style: TextStyle(color: Colors.grey)),
           const SizedBox(height: 24),
           _buildSectionCard(
             title: 'Profile Information',
             icon: Icons.person_outline,
             children: [
-              _buildLabelTextField('Full Name', _fullNameController, 'Your full name'),
+              _buildLabelTextField(
+                  'Full Name', _fullNameController, 'Your full name'),
               const SizedBox(height: 16),
-              _buildLabelTextField('Email Address', _emailController, 'your@email.com'),
+              _buildLabelTextField(
+                  'Email Address', _emailController, 'your@email.com'),
               const SizedBox(height: 16),
-              _buildLabelTextField('Organization', _orgController, 'Your organization name'),
+              _buildLabelTextField(
+                  'Organization', _orgController, 'Your organization name'),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {},
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A5F)),
-                child: const Text('Save Changes', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E3A5F)),
+                child: const Text('Save Changes',
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -122,7 +130,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 child: const Text('Change Password'),
               ),
               const SizedBox(height: 8),
-              const Text('Last password change: Never', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const Text('Last password change: Never',
+                  style: TextStyle(color: Colors.grey, fontSize: 12)),
             ],
           ),
         ],
@@ -140,16 +149,30 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             title: 'Notification Preferences',
             icon: Icons.notifications_none,
             children: [
-              _buildSwitchTile('Receipt Alerts', 'Get notified when a new receipt is added', _receiptAlerts, (val) => setState(() => _receiptAlerts = val)),
+              _buildSwitchTile(
+                  'Receipt Alerts',
+                  'Get notified when a new receipt is added',
+                  _receiptAlerts,
+                  (val) => setState(() => _receiptAlerts = val)),
               const Divider(),
-              _buildSwitchTile('Invoice Reminders', 'Get notified about upcoming invoice due dates', _invoiceReminders, (val) => setState(() => _invoiceReminders = val)),
+              _buildSwitchTile(
+                  'Invoice Reminders',
+                  'Get notified about upcoming invoice due dates',
+                  _invoiceReminders,
+                  (val) => setState(() => _invoiceReminders = val)),
               const Divider(),
-              _buildSwitchTile('Budget Alerts', 'Get notified when spending exceeds budget', _budgetAlerts, (val) => setState(() => _budgetAlerts = val)),
+              _buildSwitchTile(
+                  'Budget Alerts',
+                  'Get notified when spending exceeds budget',
+                  _budgetAlerts,
+                  (val) => setState(() => _budgetAlerts = val)),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {},
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A5F)),
-                child: const Text('Save Preferences', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E3A5F)),
+                child: const Text('Save Preferences',
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -172,12 +195,15 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
               Container(
                 width: 200,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8)),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedActivity,
                     isExpanded: true,
-                    onChanged: (val) => setState(() => _selectedActivity = val!),
+                    onChanged: (val) =>
+                        setState(() => _selectedActivity = val!),
                     items: [
                       'All Activities',
                       'Receipt Created',
@@ -186,7 +212,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                       'Emails Sent',
                       'Budget Updated',
                       'Quotation Created'
-                    ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                    ]
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .toList(),
                   ),
                 ),
               ),
@@ -201,11 +229,16 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                     DataColumn(label: Text('Timestamp')),
                   ],
                   rows: [
-                    _buildDataRow('Receipt Created', 'Created new receipt', 'Receipt: receipts...', 'Feb 12, 2026 01:13'),
-                    _buildDataRow('budget_created', '', '-Budget: budgets_...', 'Feb 12, 2026 01:21'),
-                    _buildDataRow('budget_deleted', '', '-Budget: budgets_...', 'Feb 12, 2026 01:24'),
-                    _buildDataRow('budget_created', '', '-Budget: budgets_...', 'Feb 12, 2026 01:24'),
-                    _buildDataRow('Receipt Created', 'Created new receipt', 'Receipt: receipts...', 'Feb 12, 2026 01:26'),
+                    _buildDataRow('Receipt Created', 'Created new receipt',
+                        'Receipt: receipts...', 'Feb 12, 2026 01:13'),
+                    _buildDataRow('budget_created', '', '-Budget: budgets_...',
+                        'Feb 12, 2026 01:21'),
+                    _buildDataRow('budget_deleted', '', '-Budget: budgets_...',
+                        'Feb 12, 2026 01:24'),
+                    _buildDataRow('budget_created', '', '-Budget: budgets_...',
+                        'Feb 12, 2026 01:24'),
+                    _buildDataRow('Receipt Created', 'Created new receipt',
+                        'Receipt: receipts...', 'Feb 12, 2026 01:26'),
                   ],
                 ),
               ),
@@ -226,27 +259,35 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             title: 'Invite Team Members',
             icon: Icons.group_add_outlined,
             children: [
-              _buildLabelTextField('Email Address', TextEditingController(), 'team@example.com'),
+              _buildLabelTextField(
+                  'Email Address', TextEditingController(), 'team@example.com'),
               const SizedBox(height: 16),
-              const Text('Role', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              const Text('Role',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8)),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: 'User',
                     isExpanded: true,
                     onChanged: (val) {},
-                    items: ['User', 'Admin'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                    items: ['User', 'Admin']
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .toList(),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {},
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A5F)),
-                child: const Text('Send Invitation', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E3A5F)),
+                child: const Text('Send Invitation',
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -255,9 +296,13 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             title: 'About Team Access',
             icon: Icons.info_outline,
             children: const [
-              Text('User Role: Can view reports and manage receipts, invoices, and budgets', style: TextStyle(fontSize: 13)),
+              Text(
+                  'User Role: Can view reports and manage receipts, invoices, and budgets',
+                  style: TextStyle(fontSize: 13)),
               SizedBox(height: 8),
-              Text('Admin Role: Full access including notifications, activity logs, and team management', style: TextStyle(fontSize: 13)),
+              Text(
+                  'Admin Role: Full access including notifications, activity logs, and team management',
+                  style: TextStyle(fontSize: 13)),
             ],
           ),
         ],
@@ -265,7 +310,11 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildSectionCard({required String title, required IconData icon, String? subtitle, required List<Widget> children}) {
+  Widget _buildSectionCard(
+      {required String title,
+      required IconData icon,
+      String? subtitle,
+      required List<Widget> children}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -281,12 +330,15 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             children: [
               Icon(icon, size: 20, color: Colors.grey),
               const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+            Text(subtitle,
+                style: const TextStyle(color: Colors.grey, fontSize: 13)),
           ],
           const SizedBox(height: 20),
           ...children,
@@ -295,17 +347,20 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildLabelTextField(String label, TextEditingController controller, String hint) {
+  Widget _buildLabelTextField(
+      String label, TextEditingController controller, String hint) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
           decoration: InputDecoration(
             hintText: hint,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
@@ -313,22 +368,26 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildSwitchTile(String title, String subtitle, bool value, Function(bool) onChanged) {
+  Widget _buildSwitchTile(
+      String title, String subtitle, bool value, Function(bool) onChanged) {
     return SwitchListTile(
-      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+      title: Text(title,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
       value: value,
       onChanged: onChanged,
       contentPadding: EdgeInsets.zero,
-      activeThumbColor: const Color(0xFF1E3A5F),
+      activeColor: const Color(0xFF1E3A5F),
     );
   }
 
-  DataRow _buildDataRow(String type, String details, String resource, String time) {
+  DataRow _buildDataRow(
+      String type, String details, String resource, String time) {
     return DataRow(cells: [
       DataCell(Text(type, style: const TextStyle(fontSize: 13))),
       DataCell(Text(details, style: const TextStyle(fontSize: 13))),
-      DataCell(Text(resource, style: const TextStyle(fontSize: 13, color: Colors.grey))),
+      DataCell(Text(resource,
+          style: const TextStyle(fontSize: 13, color: Colors.grey))),
       DataCell(Text(time, style: const TextStyle(fontSize: 13))),
     ]);
   }

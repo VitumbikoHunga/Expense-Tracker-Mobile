@@ -28,7 +28,9 @@ class AppDrawer extends StatelessWidget {
                       backgroundColor: Colors.white,
                       child: Text(
                         authProvider.user?.name.isNotEmpty ?? false
-                            ? authProvider.user!.name.substring(0, 1).toUpperCase()
+                            ? authProvider.user!.name
+                                .substring(0, 1)
+                                .toUpperCase()
                             : 'U',
                         style: const TextStyle(
                           color: AppTheme.primaryColor,
@@ -88,6 +90,15 @@ class AppDrawer extends StatelessWidget {
             title: 'Quotations',
             onTap: () {
               context.go('/quotations');
+              Navigator.pop(context);
+            },
+          ),
+          _buildDrawerItem(
+            context,
+            icon: Icons.attach_money,
+            title: 'Installments',
+            onTap: () {
+              context.go('/installments');
               Navigator.pop(context);
             },
           ),

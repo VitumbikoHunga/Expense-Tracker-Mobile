@@ -1,8 +1,23 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AppConstants {
-  // Platform-aware base URL - Android emulator uses 10.0.2.2 for host localhost
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
-  // For iOS simulator or physical devices, use actual IP: http://YOUR_MACHINE_IP:3000/api
+  // Platform-aware base URL. When running on the web the browser can reach the
+  // backend via localhost; on an Android emulator we need to hit 10.0.2.2.
+  // Physical devices or iOS simulators should use your machine's IP or `localhost`
+  // as appropriate. You can adjust this getter or override in your own build
+  // configuration.
+  static String get baseUrl {
+    if (kIsWeb) {
+      // web builds run in a browser which sees your dev server as localhost
+      return 'http://localhost:3000/api';
+    }
+    // default to Android emulator address; change manually if you run on device
+    return 'http://10.0.2.2:3000/api';
+  }
+
+  // When you don't have a backend available yet you can run entirely against
+  // mocked data. Flip to `false` once your API is up and running.
+  static const bool useMockApi = true;
 
   // API Endpoints
   static const String loginEndpoint = '/users/login';
@@ -25,6 +40,10 @@ class AppConstants {
   // Quotations
   static const String quotationsEndpoint = '/quotations';
   static const String createQuotationEndpoint = '/quotations/create';
+
+  // Categories
+  static const String categoriesEndpoint = '/categories';
+  // (additional category endpoints such as create/delete may be derived from this)
 
   // System
   static const String systemLogsEndpoint = '/system-logs';

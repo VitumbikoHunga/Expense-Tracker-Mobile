@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/receipt.dart';
 import '../models/invoice.dart';
 import '../models/quotation.dart';
+import '../services/api_service.dart';
+import '../config/constants.dart';
 
 class ExpenseProvider extends ChangeNotifier {
-  
   List<Receipt> _receipts = [];
   List<Invoice> _invoices = [];
   List<Quotation> _quotations = [];
@@ -18,59 +23,81 @@ class ExpenseProvider extends ChangeNotifier {
   String? get error => _error;
 
   // Calculated totals for easy access across pages
-  double get totalReceiptsAmount => _receipts.fold(0.0, (sum, r) => sum + r.amount);
-  double get totalInvoicesPaidAmount => _invoices.where((i) => i.status == 'paid').fold(0.0, (sum, i) => sum + i.amount);
-  double get totalQuotationsAmount => _quotations.fold(0.0, (sum, q) => sum + q.amount);
+  double get totalReceiptsAmount =>
+      _receipts.fold(0.0, (sum, r) => sum + r.amount);
+  double get totalInvoicesPaidAmount => _invoices
+      .where((i) => i.status == 'paid')
+      .fold(0.0, (sum, i) => sum + i.amount);
+  double get totalQuotationsAmount =>
+      _quotations.fold(0.0, (sum, q) => sum + q.amount);
+
+  // helper for parsing lists returned by API
+  List<T> _parseList<T>(
+      dynamic res, T Function(Map<String, dynamic>) fromJson) {
+    if (res is List)
+      return res.map((e) => fromJson(e as Map<String, dynamic>)).toList();
+    if (res is Map && res['data'] is List) {
+      return (res['data'] as List)
+          .map((e) => fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
+  }
 
   Future<void> fetchReceipts() async {
     _isLoading = true;
     _error = null;
+    notifyListeners();
+
+    if (AppConstants.useMockApi) {
+      // provide a little delay so spinner is visible
+      await Future.delayed(const Duration(milliseconds: 200));
+      _receipts = await _loadMockReceipts();
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
 
     try {
-      // Mock data for demo purposes
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      _receipts = [
-        Receipt(
-          id: '1',
-          vendor: 'Grocery Store',
-          amount: 45.99,
-          category: 'Food',
-          date: DateTime.now().subtract(const Duration(days: 2)),
-          notes: 'Weekly groceries',
-          userId: 'user_123',
-        ),
-        Receipt(
-          id: '2',
-          vendor: 'Gas Station',
-          amount: 52.00,
-          category: 'Transport',
-          date: DateTime.now().subtract(const Duration(days: 1)),
-          notes: 'Fuel',
-          userId: 'user_123',
-        ),
-        Receipt(
-          id: '3',
-          vendor: 'Coffee Shop',
-          amount: 5.50,
-          category: 'Food',
-          date: DateTime.now(),
-          notes: 'Morning coffee',
-          userId: 'user_123',
-        ),
-      ];
-      _isLoading = false;
-      notifyListeners();
+      final response = await ApiService().get(AppConstants.receiptsEndpoint);
+      _receipts = _parseList<Receipt>(response, (x) => Receipt.fromJson(x));
     } catch (e) {
+      // if API fails just leave receipts as-is and report error
       _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<bool> createReceipt(Receipt receipt) async {
+    if (AppConstants.useMockApi) {
+      // simply prepend a fake id and add to list
+      final created = Receipt(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        vendor: receipt.vendor,
+        amount: receipt.amount,
+        category: receipt.category,
+        date: receipt.date,
+        userId: receipt.userId,
+      );
+      _receipts.insert(0, created);
+      await _saveMockReceipts();
+      notifyListeners();
+      return true;
+    }
+
     try {
-      _receipts.insert(0, receipt);
+      final data = receipt.toJson();
+      data.remove('id');
+
+      final response = await ApiService().post(
+        AppConstants.createReceiptEndpoint,
+        data: data,
+      );
+      // try to convert returned object
+      final created = Receipt.fromJson(response as Map<String, dynamic>);
+      _receipts.insert(0, created);
       notifyListeners();
       return true;
     } catch (e) {
@@ -83,48 +110,54 @@ class ExpenseProvider extends ChangeNotifier {
   Future<void> fetchInvoices() async {
     _isLoading = true;
     _error = null;
+    notifyListeners();
+
+    if (AppConstants.useMockApi) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      _invoices = await _loadMockInvoices();
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
 
     try {
-      // Mock data for demo purposes
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      _invoices = [
-        Invoice(
-          id: '1',
-          invoiceNumber: 'INV-001',
-          clientName: 'ABC Corp',
-          amount: 1500.00,
-          status: 'pending',
-          invoiceDate: DateTime.now().subtract(const Duration(days: 5)),
-          dueDate: DateTime.now().add(const Duration(days: 25)),
-          description: 'Services rendered',
-          userId: 'user_123',
-        ),
-        Invoice(
-          id: '2',
-          invoiceNumber: 'INV-002',
-          clientName: 'XYZ Ltd',
-          amount: 2500.00,
-          status: 'paid',
-          invoiceDate: DateTime.now().subtract(const Duration(days: 10)),
-          dueDate: DateTime.now().subtract(const Duration(days: 5)),
-          description: 'Project delivery',
-          userId: 'user_123',
-        ),
-      ];
-      _isLoading = false;
-      notifyListeners();
+      final response = await ApiService().get(AppConstants.invoicesEndpoint);
+      _invoices = _parseList<Invoice>(response, (x) => Invoice.fromJson(x));
     } catch (e) {
       _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<bool> createInvoice(Invoice invoice) async {
+    if (AppConstants.useMockApi) {
+      final created = Invoice(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        invoiceNumber: invoice.invoiceNumber,
+        clientName: invoice.clientName,
+        amount: invoice.amount,
+        status: invoice.status,
+        invoiceDate: invoice.invoiceDate,
+        dueDate: invoice.dueDate,
+        userId: invoice.userId,
+      );
+      _invoices.insert(0, created);
+      await _saveMockInvoices();
+      notifyListeners();
+      return true;
+    }
+
     try {
-      // In a real app, this would be an API call
-      _invoices.insert(0, invoice);
+      final data = invoice.toJson();
+      data.remove('id');
+      final response = await ApiService().post(
+        AppConstants.createInvoiceEndpoint,
+        data: data,
+      );
+      final created = Invoice.fromJson(response as Map<String, dynamic>);
+      _invoices.insert(0, created);
       notifyListeners();
       return true;
     } catch (e) {
@@ -137,45 +170,63 @@ class ExpenseProvider extends ChangeNotifier {
   Future<void> fetchQuotations() async {
     _isLoading = true;
     _error = null;
+    notifyListeners();
 
-    try {
-      // Mock data for demo purposes
-      await Future.delayed(const Duration(milliseconds: 500));
-      
+    if (AppConstants.useMockApi) {
+      await Future.delayed(const Duration(milliseconds: 200));
       _quotations = [
         Quotation(
-          id: '1',
-          quotationNumber: 'QT-001',
-          clientName: 'New Client',
-          amount: 3000.00,
-          status: 'draft',
+          id: 'q1',
+          quotationNumber: 'QUO-001',
+          clientName: 'Mock Client',
+          amount: 150.0,
+          status: 'pending',
           validUntil: DateTime.now().add(const Duration(days: 30)),
-          description: 'Project estimation',
-          userId: 'user_123',
-        ),
-        Quotation(
-          id: '2',
-          quotationNumber: 'QT-002',
-          clientName: 'Potential Customer',
-          amount: 5000.00,
-          status: 'sent',
-          validUntil: DateTime.now().add(const Duration(days: 15)),
-          description: 'Website development',
-          userId: 'user_123',
-        ),
+          userId: '1',
+        )
       ];
       _isLoading = false;
       notifyListeners();
+      return;
+    }
+
+    try {
+      final response = await ApiService().get(AppConstants.quotationsEndpoint);
+      _quotations =
+          _parseList<Quotation>(response, (x) => Quotation.fromJson(x));
     } catch (e) {
       _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<bool> createQuotation(Quotation quotation) async {
+    if (AppConstants.useMockApi) {
+      final created = Quotation(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        quotationNumber: quotation.quotationNumber,
+        clientName: quotation.clientName,
+        amount: quotation.amount,
+        status: quotation.status,
+        validUntil: quotation.validUntil,
+        userId: quotation.userId,
+      );
+      _quotations.insert(0, created);
+      notifyListeners();
+      return true;
+    }
+
     try {
-      _quotations.insert(0, quotation);
+      final data = quotation.toJson();
+      data.remove('id');
+      final response = await ApiService().post(
+        AppConstants.createQuotationEndpoint,
+        data: data,
+      );
+      final created = Quotation.fromJson(response as Map<String, dynamic>);
+      _quotations.insert(0, created);
       notifyListeners();
       return true;
     } catch (e) {
@@ -185,8 +236,111 @@ class ExpenseProvider extends ChangeNotifier {
     }
   }
 
+  /// Deletes a receipt. Returns a map containing success flag and
+  /// the amount of the deleted receipt (0 if not found).
+  Future<Map<String, dynamic>> deleteReceipt(String id) async {
+    double deletedAmount = 0;
+    String? budgetId;
+
+    // find existing receipt
+    final existing = _receipts.firstWhere((r) => r.id == id,
+        orElse: () => Receipt(
+            vendor: '',
+            amount: 0,
+            category: '',
+            date: DateTime.now(),
+            userId: ''));
+    if (existing.id != null) {
+      deletedAmount = existing.amount;
+      budgetId = existing.budgetId;
+    }
+
+    if (AppConstants.useMockApi) {
+      _receipts.removeWhere((r) => r.id == id);
+      await _saveMockReceipts();
+      notifyListeners();
+      return {'success': true, 'amount': deletedAmount, 'budgetId': budgetId};
+    }
+
+    try {
+      await ApiService().delete('${AppConstants.receiptsEndpoint}/$id');
+      _receipts.removeWhere((r) => r.id == id);
+      notifyListeners();
+      return {'success': true, 'amount': deletedAmount, 'budgetId': budgetId};
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return {'success': false, 'amount': deletedAmount, 'budgetId': budgetId};
+    }
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  /// Return receipts matching the given budget ID.
+  List<Receipt> receiptsForBudget(String budgetId) {
+    return _receipts.where((r) => r.budgetId == budgetId).toList();
+  }
+
+  // --- mock persistence helpers --------------------------------------------------
+  static const _receiptsKey = 'mock_receipts';
+  static const _invoicesKey = 'mock_invoices';
+
+  Future<List<Receipt>> _loadMockReceipts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_receiptsKey);
+    if (jsonString == null) {
+      return [
+        Receipt(
+          id: 'r1',
+          vendor: 'Mock Store',
+          amount: 25.0,
+          category: 'Food',
+          date: DateTime.now(),
+          userId: '1',
+        )
+      ];
+    }
+    final List decoded = json.decode(jsonString) as List;
+    return decoded
+        .map((e) => Receipt.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> _saveMockReceipts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = json.encode(_receipts.map((r) => r.toJson()).toList());
+    await prefs.setString(_receiptsKey, jsonString);
+  }
+
+  Future<List<Invoice>> _loadMockInvoices() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_invoicesKey);
+    if (jsonString == null) {
+      return [
+        Invoice(
+          id: 'i1',
+          invoiceNumber: 'INV-001',
+          clientName: 'Mock Client',
+          amount: 100.0,
+          status: 'paid',
+          invoiceDate: DateTime.now().subtract(const Duration(days: 5)),
+          dueDate: DateTime.now().add(const Duration(days: 25)),
+          userId: '1',
+        )
+      ];
+    }
+    final List decoded = json.decode(jsonString) as List;
+    return decoded
+        .map((e) => Invoice.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> _saveMockInvoices() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = json.encode(_invoices.map((i) => i.toJson()).toList());
+    await prefs.setString(_invoicesKey, jsonString);
   }
 }

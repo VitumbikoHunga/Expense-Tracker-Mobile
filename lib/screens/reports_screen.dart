@@ -27,7 +27,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Map<String, double> _buildCategoryExpenses(ExpenseProvider provider) {
     final expenses = <String, double>{};
     for (var receipt in provider.receipts) {
-      expenses[receipt.category] = (expenses[receipt.category] ?? 0) + receipt.amount;
+      expenses[receipt.category] =
+          (expenses[receipt.category] ?? 0) + receipt.amount;
     }
     return expenses;
   }
@@ -51,8 +52,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
       body: Consumer2<ExpenseProvider, BudgetProvider>(
         builder: (context, expenseProvider, budgetProvider, _) {
           final categoryExpenses = _buildCategoryExpenses(expenseProvider);
-            final totalExpenses = expenseProvider.totalReceiptsAmount;
-            final totalEarnings = expenseProvider.totalInvoicesPaidAmount;
+          final totalExpenses = expenseProvider.totalReceiptsAmount;
+          final totalEarnings = expenseProvider.totalInvoicesPaidAmount;
           final netBalance = totalEarnings - totalExpenses;
 
           return RefreshIndicator(
@@ -77,33 +78,32 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Summary Cards
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildSummaryCard(
-                          'Total Expenses',
-                          'MK${totalExpenses.toStringAsFixed(2)}',
-                          Icons.trending_down,
-                          Colors.red,
-                        ),
-                        const SizedBox(width: 16),
-                        _buildSummaryCard(
-                          'Total Earnings',
-                          'MK${totalEarnings.toStringAsFixed(2)}',
-                          Icons.trending_up,
-                          Colors.green,
-                        ),
-                        const SizedBox(width: 16),
-                        _buildSummaryCard(
-                          'Net Balance',
-                          '${netBalance >= 0 ? '+' : ''}MK${netBalance.toStringAsFixed(2)}',
-                          netBalance >= 0 ? Icons.trending_up : Icons.trending_down,
-                          netBalance >= 0 ? Colors.green : Colors.red,
-                        ),
-                      ],
-                    ),
+                  // Summary Cards (wrap instead of scrolling)
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      _buildSummaryCard(
+                        'Total Expenses',
+                        'MK${totalExpenses.toStringAsFixed(2)}',
+                        Icons.trending_down,
+                        Colors.red,
+                      ),
+                      _buildSummaryCard(
+                        'Total Earnings',
+                        'MK${totalEarnings.toStringAsFixed(2)}',
+                        Icons.trending_up,
+                        Colors.green,
+                      ),
+                      _buildSummaryCard(
+                        'Net Balance',
+                        '${netBalance >= 0 ? '+' : ''}MK${netBalance.toStringAsFixed(2)}',
+                        netBalance >= 0
+                            ? Icons.trending_up
+                            : Icons.trending_down,
+                        netBalance >= 0 ? Colors.green : Colors.red,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 32),
 
@@ -161,7 +161,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildSummaryCard(String title, String amount, IconData icon, Color color) {
+  Widget _buildSummaryCard(
+      String title, String amount, IconData icon, Color color) {
     return Container(
       width: 200,
       padding: const EdgeInsets.all(20),
@@ -192,7 +193,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey),
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey),
               ),
             ],
           ),
@@ -240,7 +244,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   const titles = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
                   return Padding(
                     padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(titles[value.toInt()], style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                    child: Text(titles[value.toInt()],
+                        style:
+                            const TextStyle(color: Colors.grey, fontSize: 10)),
                   );
                 },
               ),
@@ -250,17 +256,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) {
-                  return Text('MK${value.toInt()}', style: const TextStyle(color: Colors.grey, fontSize: 10));
+                  return Text('MK${value.toInt()}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 10));
                 },
               ),
             ),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.grey.shade100, strokeWidth: 1),
           ),
           borderData: FlBorderData(show: false),
         ),
@@ -293,7 +303,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
               children: [
                 Icon(Icons.pie_chart_outline, size: 48, color: Colors.grey),
                 SizedBox(height: 16),
-                Text('No expense data available', style: TextStyle(color: Colors.grey)),
+                Text('No expense data available',
+                    style: TextStyle(color: Colors.grey)),
               ],
             )
           : Column(
@@ -308,9 +319,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         return PieChartSectionData(
                           color: _getCategoryColor(e.key),
                           value: e.value,
-                          title: '${(e.value / total * 100).toStringAsFixed(0)}%',
+                          title:
+                              '${(e.value / total * 100).toStringAsFixed(0)}%',
                           radius: 50,
-                          titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                          titleStyle: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
                         );
                       }).toList(),
                     ),
@@ -321,11 +336,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
                         children: [
-                          Container(width: 12, height: 12, color: _getCategoryColor(e.key)),
+                          Container(
+                              width: 12,
+                              height: 12,
+                              color: _getCategoryColor(e.key)),
                           const SizedBox(width: 8),
                           Text(e.key),
                           const Spacer(),
-                          Text('MK${e.value.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text('MK${e.value.toStringAsFixed(2)}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
                         ],
                       ),
                     )),
@@ -336,13 +356,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Color _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
-      case 'food': return const Color(0xFF63BE7B);
-      case 'transport': return const Color(0xFFFFA500);
-      case 'entertainment': return const Color(0xFF8E7CC3);
-      case 'utilities': return const Color(0xFFFF6B6B);
-      case 'office': return const Color(0xFF4ECDC4);
-      case 'healthcare': return const Color(0xFF45B7D1);
-      default: return const Color(0xFF1E3A5F);
+      case 'food':
+        return const Color(0xFF63BE7B);
+      case 'transport':
+        return const Color(0xFFFFA500);
+      case 'entertainment':
+        return const Color(0xFF8E7CC3);
+      case 'utilities':
+        return const Color(0xFFFF6B6B);
+      case 'office':
+        return const Color(0xFF4ECDC4);
+      case 'healthcare':
+        return const Color(0xFF45B7D1);
+      default:
+        return const Color(0xFF1E3A5F);
     }
   }
 }
