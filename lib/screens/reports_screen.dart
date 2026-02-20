@@ -3,7 +3,16 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/expense_provider.dart';
 import '../providers/budget_provider.dart';
+import 'package:intl/intl.dart';
 import '../widgets/app_drawer.dart';
+
+// simple helper class for report buckets (day or month)
+class _Bucket {
+  final String label;
+  final DateTime start;
+  final DateTime end;
+  _Bucket(this.label, this.start, this.end);
+}
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -15,6 +24,9 @@ class ReportsScreen extends StatefulWidget {
 class _ReportsScreenState extends State<ReportsScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _selectedPeriod = 'Last 6 months';
+  DateTime? _specificDate;
+  DateTime? _fromDate;
+  DateTime? _toDate;
 
   @override
   void initState() {
@@ -107,13 +119,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Monthly Comparison Chart
-                  const Text(
-                    'Monthly Comparison',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  // Comparison Chart
+                  Text(
+                    '${_selectedPeriod} Comparison',
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  _buildMonthlyComparisonChart(expenseProvider),
+                  _buildPeriodControls(),
+                  const SizedBox(height: 16),
+                  _buildPeriodComparisonChart(expenseProvider),
 
                   const SizedBox(height: 32),
                   // Expenses by Category
@@ -147,10 +162,37 @@ class _ReportsScreenState extends State<ReportsScreen> {
           icon: const Icon(Icons.calendar_today, size: 16),
           style: const TextStyle(color: Colors.black, fontSize: 13),
           onChanged: (String? newValue) {
-            setState(() => _selectedPeriod = newValue!);
+            setState(() {
+              _selectedPeriod = newValue!;
+              // reset custom dates when period changes
+              if (_selectedPeriod == 'Daily') {
+                _specificDate = DateTime.now();
+                _fromDate = null;
+                _toDate = null;
+              } else if (_selectedPeriod == 'Weekly') {
+                _fromDate = DateTime.now().subtract(const Duration(days: 6));
+                _toDate = DateTime.now();
+                _specificDate = null;
+              } else if (_selectedPeriod == 'Custom range') {
+                _fromDate = DateTime.now().subtract(const Duration(days: 30));
+                _toDate = DateTime.now();
+                _specificDate = null;
+              } else {
+                _specificDate = null;
+                _fromDate = null;
+                _toDate = null;
+              }
+            });
           },
-          items: <String>['Last 3 months', 'Last 6 months', 'Last year']
-              .map<DropdownMenuItem<String>>((String value) {
+          items: <String>[
+            'Daily',
+            'Weekly',
+            'Last 1 month',
+            'Last 3 months',
+            'Last 6 months',
+            'Last year',
+            'Custom range'
+          ].map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
               value: value,
               child: Text(value),
@@ -158,6 +200,125 @@ class _ReportsScreenState extends State<ReportsScreen> {
           }).toList(),
         ),
       ),
+    );
+  }
+
+  // controls shown below the period dropdown when additional date input is required
+  Widget _buildPeriodControls() {
+    if (_selectedPeriod == 'Daily') {
+      return _buildDateField('Select date', _specificDate ?? DateTime.now(),
+          (date) => setState(() => _specificDate = date));
+    }
+    if (_selectedPeriod == 'Weekly' || _selectedPeriod == 'Custom range') {
+      return Row(
+        children: [
+          Expanded(
+              child: _buildDateField('From', _fromDate ?? DateTime.now(),
+                  (date) => setState(() => _fromDate = date))),
+          const SizedBox(width: 16),
+          Expanded(
+              child: _buildDateField('To', _toDate ?? DateTime.now(),
+                  (date) => setState(() => _toDate = date))),
+        ],
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildDateField(
+      String label, DateTime initial, ValueChanged<DateTime> onSelected) {
+    return GestureDetector(
+      onTap: () async {
+        final picked = await showDatePicker(
+            context: context,
+            initialDate: initial,
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100));
+        if (picked != null) onSelected(picked);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          '$label: ${DateFormat('yyyy-MM-dd').format(initial)}',
+          style: const TextStyle(fontSize: 14),
+        ),
+      ),
+    );
+  }
+
+  List<_Bucket> _computeBuckets() {
+    DateTime now = DateTime.now();
+    DateTime start;
+    DateTime end;
+    String periodType = 'month';
+
+    if (_selectedPeriod == 'Daily') {
+      start = _specificDate ?? now;
+      end = start.add(const Duration(days: 1));
+      periodType = 'day';
+    } else if (_selectedPeriod == 'Weekly') {
+      start = _fromDate ?? now.subtract(const Duration(days: 6));
+      end = (_toDate ?? now).add(const Duration(days: 1));
+      periodType = 'day';
+    } else if (_selectedPeriod == 'Custom range') {
+      start = _fromDate ?? now.subtract(const Duration(days: 30));
+      end = (_toDate ?? now).add(const Duration(days: 1));
+      final diff = end.difference(start).inDays;
+      periodType = diff <= 31 ? 'day' : 'month';
+    } else if (_selectedPeriod.startsWith('Last')) {
+      if (_selectedPeriod.contains('1 month')) {
+        start = DateTime(now.year, now.month - 1, now.day);
+      } else if (_selectedPeriod.contains('3 months')) {
+        start = DateTime(now.year, now.month - 3, now.day);
+      } else if (_selectedPeriod.contains('6 months')) {
+        start = DateTime(now.year, now.month - 6, now.day);
+      } else if (_selectedPeriod.contains('year')) {
+        start = DateTime(now.year - 1, now.month, now.day);
+      } else {
+        start = now.subtract(const Duration(days: 180));
+      }
+      end = now.add(const Duration(days: 1));
+      periodType = 'month';
+    } else {
+      start = now.subtract(const Duration(days: 180));
+      end = now.add(const Duration(days: 1));
+      periodType = 'month';
+    }
+
+    List<_Bucket> buckets = [];
+    if (periodType == 'day') {
+      DateTime cursor = DateTime(start.year, start.month, start.day);
+      while (cursor.isBefore(end)) {
+        final label = DateFormat('MM/dd').format(cursor);
+        buckets
+            .add(_Bucket(label, cursor, cursor.add(const Duration(days: 1))));
+        cursor = cursor.add(const Duration(days: 1));
+      }
+    } else {
+      DateTime cursor = DateTime(start.year, start.month);
+      while (cursor.isBefore(end)) {
+        final label = DateFormat('MMM yy').format(cursor);
+        buckets.add(
+            _Bucket(label, cursor, DateTime(cursor.year, cursor.month + 1)));
+        cursor = DateTime(cursor.year, cursor.month + 1);
+      }
+    }
+    return buckets;
+  }
+
+  BarChartGroupData _makeGroupData(int x, double y1, double y2) {
+    return BarChartGroupData(
+      barsSpace: 4,
+      x: x,
+      barRods: [
+        BarChartRodData(toY: y1, color: Colors.red.shade300, width: 8),
+        BarChartRodData(toY: y2, color: Colors.green.shade300, width: 8),
+      ],
     );
   }
 
@@ -214,8 +375,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildMonthlyComparisonChart(ExpenseProvider provider) {
+  Widget _buildPeriodComparisonChart(ExpenseProvider provider) {
+    final buckets = _computeBuckets();
+    final expenses = buckets.map((b) {
+      return provider.receipts
+          .where((r) => !r.date.isBefore(b.start) && r.date.isBefore(b.end))
+          .fold(0.0, (sum, r) => sum + r.amount);
+    }).toList();
+    final earnings = buckets.map((b) {
+      return provider.invoices
+          .where((i) =>
+              !i.invoiceDate.isBefore(b.start) && i.invoiceDate.isBefore(b.end))
+          .fold(0.0, (sum, i) => sum + i.amount);
+    }).toList();
+
+    double maxValue = 0;
+    for (var v in [...expenses, ...earnings]) {
+      if (v > maxValue) maxValue = v;
+    }
+    if (maxValue < 1) maxValue = 1;
+
     return Container(
+      width: double.infinity,
       height: 300,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -225,26 +406,22 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
       child: BarChart(
         BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: 5000, // Mock max for visual consistency
-          barGroups: [
-            _makeGroupData(0, 1500, 2000), // Sep
-            _makeGroupData(1, 2200, 1800), // Oct
-            _makeGroupData(2, 1200, 2500), // Nov
-            _makeGroupData(3, 3500, 4000), // Dec
-            _makeGroupData(4, 2800, 3200), // Jan
-            _makeGroupData(5, 1000, 1500), // Feb
-          ],
+          alignment: BarChartAlignment.spaceBetween,
+          maxY: maxValue * 1.1,
+          barGroups: List.generate(buckets.length, (i) {
+            return _makeGroupData(i, expenses[i], earnings[i]);
+          }),
           titlesData: FlTitlesData(
             show: true,
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (value, meta) {
-                  const titles = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
+                  final idx = value.toInt();
+                  if (idx < 0 || idx >= buckets.length) return const SizedBox();
                   return Padding(
                     padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(titles[value.toInt()],
+                    child: Text(buckets[idx].label,
                         style:
                             const TextStyle(color: Colors.grey, fontSize: 10)),
                   );
@@ -275,17 +452,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
           borderData: FlBorderData(show: false),
         ),
       ),
-    );
-  }
-
-  BarChartGroupData _makeGroupData(int x, double y1, double y2) {
-    return BarChartGroupData(
-      barsSpace: 4,
-      x: x,
-      barRods: [
-        BarChartRodData(toY: y1, color: Colors.red.shade300, width: 8),
-        BarChartRodData(toY: y2, color: Colors.green.shade300, width: 8),
-      ],
     );
   }
 

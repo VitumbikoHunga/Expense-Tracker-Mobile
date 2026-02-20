@@ -451,6 +451,7 @@ class _AddReceiptDialogState extends State<AddReceiptDialog> {
                             context
                                 .watch<ExpenseProvider>()
                                 .invoices
+                                .where((i) => i.status.toLowerCase() != 'paid')
                                 .map((i) => i.invoiceNumber)
                                 .toList(),
                             _selectedInvoiceNumber,
@@ -786,6 +787,41 @@ class _AddReceiptDialogState extends State<AddReceiptDialog> {
         if (full) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('Budget is fully used; cannot add more receipts')));
+          return;
+        }
+      }
+
+      // if this receipt is linked to an invoice we must ensure the invoice
+      // is not already paid and that the amount doesn't exceed the remaining
+      if (receipt.invoiceId != null && receipt.invoiceId!.isNotEmpty) {
+        final expProv = context.read<ExpenseProvider>();
+        final inv = expProv.invoices.firstWhere(
+            (i) => i.id == receipt.invoiceId,
+            orElse: () => Invoice(
+                id: '',
+                invoiceNumber: '',
+                clientName: '',
+                amount: 0,
+                status: '',
+                invoiceDate: DateTime.now(),
+                dueDate: DateTime.now(),
+                userId: ''));
+        if (inv.id!.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Unable to locate linked invoice')));
+          return;
+        }
+        if (inv.status.toLowerCase() == 'paid') {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Invoice already paid; cannot add receipt')));
+          return;
+        }
+        final paid = expProv.amountPaidForInvoice(inv.id);
+        final remaining = inv.amount - paid;
+        if (receipt.amount > remaining) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'Receipt exceeds remaining balance (MK ${remaining.toStringAsFixed(2)})')));
           return;
         }
       }

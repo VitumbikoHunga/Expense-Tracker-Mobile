@@ -32,6 +32,8 @@ class AppConstants {
   // Invoices
   static const String invoicesEndpoint = '/invoices';
   static const String createInvoiceEndpoint = '/invoices/create';
+  static const String sendInvoiceReceiptEndpoint =
+      '/invoices'; // base used with /{id}/send-receipt
 
   // Budgets
   static const String budgetsEndpoint = '/budgets';

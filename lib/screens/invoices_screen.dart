@@ -86,50 +86,106 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                             ],
                           ),
                         )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: expenseProvider.invoices.length,
-                          itemBuilder: (context, index) {
-                            final invoice = expenseProvider.invoices[index];
-                            return Card(
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: AppTheme.primaryColor
-                                      .withValues(alpha: 0.1),
-                                  child: Text(
-                                    invoice.clientName.isNotEmpty
-                                        ? invoice.clientName.substring(0, 1)
-                                        : '?',
-                                    style: const TextStyle(
-                                        color: AppTheme.primaryColor),
+                      : LayoutBuilder(builder: (context, constraints) {
+                          int crossCount = constraints.maxWidth > 600 ? 3 : 2;
+                          return GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossCount,
+                              mainAxisSpacing: 16,
+                              crossAxisSpacing: 16,
+                              childAspectRatio: 3 / 2,
+                            ),
+                            itemCount: expenseProvider.invoices.length,
+                            itemBuilder: (context, index) {
+                              final invoice = expenseProvider.invoices[index];
+                              final isPaid =
+                                  invoice.status.toLowerCase() == 'paid';
+                              return Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor: AppTheme
+                                                .primaryColor
+                                                .withValues(alpha: 0.1),
+                                            child: Text(
+                                              invoice.clientName.isNotEmpty
+                                                  ? invoice.clientName
+                                                      .substring(0, 1)
+                                                  : '?',
+                                              style: const TextStyle(
+                                                  color: AppTheme.primaryColor),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              invoice.invoiceNumber,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        '${invoice.clientName} • ${invoice.status}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        'MK ${invoice.amount.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.primaryColor),
+                                      ),
+                                      Text(
+                                        DateFormat('MMM dd, yyyy')
+                                            .format(invoice.dueDate),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                      if (isPaid) ...[
+                                        const SizedBox(height: 8),
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            final success =
+                                                await expenseProvider
+                                                    .sendInvoiceReceipt(
+                                                        invoice.id!);
+                                            if (success) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content: Text(
+                                                          'Receipt sent to client')));
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(SnackBar(
+                                                      content: Text(expenseProvider
+                                                              .error ??
+                                                          'Failed to send receipt')));
+                                            }
+                                          },
+                                          child: const Text('Generate'),
+                                        ),
+                                      ]
+                                    ],
                                   ),
                                 ),
-                                title: Text(invoice.invoiceNumber),
-                                subtitle: Text(
-                                    '${invoice.clientName} • ${invoice.status}'),
-                                trailing: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      'MK ${invoice.amount.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.primaryColor,
-                                      ),
-                                    ),
-                                    Text(
-                                      DateFormat('MMM dd, yyyy')
-                                          .format(invoice.dueDate),
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                              );
+                            },
+                          );
+                        }),
                 ), // end Expanded
               ], // end Column children
             ), // end Column

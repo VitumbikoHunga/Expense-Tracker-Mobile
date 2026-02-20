@@ -31,11 +31,29 @@ class ExpenseProvider extends ChangeNotifier {
   double get totalQuotationsAmount =>
       _quotations.fold(0.0, (sum, q) => sum + q.amount);
 
+  /// Returns the total amount paid against a specific invoice using linked receipts.
+  double amountPaidForInvoice(String? invoiceId) {
+    if (invoiceId == null) return 0.0;
+    return _receipts
+        .where((r) => r.invoiceId == invoiceId)
+        .fold(0.0, (sum, r) => sum + r.amount);
+  }
+
+  /// Returns receipts that are linked to a particular invoice.
+  List<Receipt> receiptsForInvoice(String invoiceId) {
+    return _receipts.where((r) => r.invoiceId == invoiceId).toList();
+  }
+
+  /// Invoice list filtered to only those currently being paid via installments.
+  List<Invoice> get installmentInvoices =>
+      _invoices.where((i) => i.status.toLowerCase() == 'installments').toList();
+
   // helper for parsing lists returned by API
   List<T> _parseList<T>(
       dynamic res, T Function(Map<String, dynamic>) fromJson) {
-    if (res is List)
+    if (res is List) {
       return res.map((e) => fromJson(e as Map<String, dynamic>)).toList();
+    }
     if (res is Map && res['data'] is List) {
       return (res['data'] as List)
           .map((e) => fromJson(e as Map<String, dynamic>))
@@ -71,6 +89,40 @@ class ExpenseProvider extends ChangeNotifier {
   }
 
   Future<bool> createReceipt(Receipt receipt) async {
+    // Helper used to update invoice status when linked
+    void _maybeUpdateInvoiceStatus(String? invoiceId) {
+      if (invoiceId == null) return;
+      final idx = _invoices.indexWhere((i) => i.id == invoiceId);
+      if (idx == -1) return;
+      final invoice = _invoices[idx];
+      final paidSoFar = _receipts
+          .where((r) => r.invoiceId == invoiceId)
+          .fold(0.0, (sum, r) => sum + r.amount);
+      // if the receipt being added isn't yet in the list (mock path), include its amount
+      // this method is sometimes called before insertion for mock but we'll recompute after anyway
+      if (paidSoFar >= invoice.amount && invoice.status != 'paid') {
+        _invoices[idx] = Invoice(
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          clientName: invoice.clientName,
+          clientEmail: invoice.clientEmail,
+          budgetId: invoice.budgetId,
+          amount: invoice.amount,
+          status: 'paid',
+          invoiceDate: invoice.invoiceDate,
+          dueDate: invoice.dueDate,
+          description: invoice.description,
+          items: invoice.items,
+          imageUrl: invoice.imageUrl,
+          location: invoice.location,
+          notes: invoice.notes,
+          userId: invoice.userId,
+          createdAt: invoice.createdAt,
+          updatedAt: DateTime.now(),
+        );
+      }
+    }
+
     if (AppConstants.useMockApi) {
       // simply prepend a fake id and add to list
       final created = Receipt(
@@ -80,8 +132,11 @@ class ExpenseProvider extends ChangeNotifier {
         category: receipt.category,
         date: receipt.date,
         userId: receipt.userId,
+        invoiceId: receipt.invoiceId,
+        installments: receipt.installments,
       );
       _receipts.insert(0, created);
+      _maybeUpdateInvoiceStatus(created.invoiceId);
       await _saveMockReceipts();
       notifyListeners();
       return true;
@@ -98,6 +153,7 @@ class ExpenseProvider extends ChangeNotifier {
       // try to convert returned object
       final created = Receipt.fromJson(response as Map<String, dynamic>);
       _receipts.insert(0, created);
+      _maybeUpdateInvoiceStatus(created.invoiceId);
       notifyListeners();
       return true;
     } catch (e) {
@@ -159,6 +215,29 @@ class ExpenseProvider extends ChangeNotifier {
       final created = Invoice.fromJson(response as Map<String, dynamic>);
       _invoices.insert(0, created);
       notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Sends the generated receipt for an invoice to the client's email.
+  /// Only invoices already marked as paid should invoke this.
+  Future<bool> sendInvoiceReceipt(String invoiceId) async {
+    if (AppConstants.useMockApi) {
+      // in mock mode just pretend it worked after a small delay
+      await Future.delayed(const Duration(milliseconds: 200));
+      return true;
+    }
+
+    try {
+      await ApiService().post(
+        '${AppConstants.invoicesEndpoint}/$invoiceId/send-receipt',
+        data: {},
+      );
+      // ignore response body for now
       return true;
     } catch (e) {
       _error = e.toString();
