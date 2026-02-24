@@ -652,7 +652,7 @@ class _AddReceiptDialogState extends State<AddReceiptDialog> {
                     style: TextStyle(color: Colors.grey[600])),
               )
             : DropdownButtonFormField<String>(
-                initialValue: value,
+                value: value,
                 items: options
                     .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                     .toList(),
