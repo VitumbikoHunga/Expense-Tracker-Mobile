@@ -212,6 +212,7 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                               Text(
                                 'No receipts found',
                                 style: Theme.of(context).textTheme.bodyMedium,
+                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
@@ -232,19 +233,28 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                     color: AppTheme.primaryColor,
                                   ),
                                 ),
-                                title: Text(receipt.title ?? receipt.vendor),
+                                title: Text(
+                                  receipt.title ?? receipt.vendor,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                                 subtitle: Text(
-                                    '${receipt.category} • ${DateFormat('MMM dd, yyyy').format(receipt.date)}'),
+                                  '${receipt.category} • ${DateFormat('MMM dd, yyyy').format(receipt.date)}',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      'MK ${receipt.amount.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.primaryColor,
+                                    Flexible(
+                                      child: Text(
+                                        'MK ${receipt.amount.toStringAsFixed(2)}',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primaryColor,
+                                        ),
                                       ),
                                     ),
+                                    const SizedBox(width: 8),
                                     PopupMenuButton<String>(
                                       onSelected: (value) async {
                                         switch (value) {
@@ -379,147 +389,151 @@ class _AddReceiptDialogState extends State<AddReceiptDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: double.infinity,
-        constraints:
-            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Add New Receipt',
-                      style: Theme.of(context).textTheme.headlineSmall),
-                  IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close)),
-                ],
+    return SafeArea(
+      child: Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Add New Receipt',
+                        style: Theme.of(context).textTheme.headlineSmall),
+                    IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close)),
+                  ],
+                ),
               ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Receipt Photo',
-                          style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 8),
-                      _buildPhotoArea(),
-                      const SizedBox(height: 24),
-                      _buildTextField(_titleController, 'Title *',
-                          required: true, hint: 'e.g., Lunch at restaurant'),
-                      const SizedBox(height: 16),
-                      _responsiveRow([
-                        _buildTextField(_amountController, 'Amount *',
-                            required: true, keyboardType: TextInputType.number),
-                        _buildDropdownField(
-                          'Link Type',
-                          ['None', 'Budget', 'Invoice'],
-                          _linkType,
-                          (val) => setState(() => _linkType = val),
-                        ),
-                      ]),
-                      if (_linkType == 'Budget')
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16.0),
-                          child: _buildDropdownField(
-                            'Budget',
-                            context
-                                .watch<BudgetProvider>()
-                                .budgets
-                                .where((b) => b.spent < b.limit)
-                                .map((b) => b.category)
-                                .toList(),
-                            _selectedBudgetName,
-                            (val) => setState(() => _selectedBudgetName = val),
+              const Divider(height: 1),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Receipt Photo',
+                            style: Theme.of(context).textTheme.titleSmall),
+                        const SizedBox(height: 8),
+                        _buildPhotoArea(),
+                        const SizedBox(height: 24),
+                        _buildTextField(_titleController, 'Title *',
+                            required: true, hint: 'e.g., Lunch at restaurant'),
+                        const SizedBox(height: 16),
+                        _responsiveRow([
+                          _buildTextField(_amountController, 'Amount *',
+                              required: true,
+                              keyboardType: TextInputType.number),
+                          _buildDropdownField(
+                            'Link Type',
+                            ['None', 'Budget', 'Invoice'],
+                            _linkType,
+                            (val) => setState(() => _linkType = val),
                           ),
-                        ),
-                      if (_linkType == 'Invoice')
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16.0),
-                          child: _buildDropdownField(
-                            'Invoice',
-                            context
-                                .watch<ExpenseProvider>()
-                                .invoices
-                                .where((i) => i.status.toLowerCase() != 'paid')
-                                .map((i) => i.invoiceNumber)
-                                .toList(),
-                            _selectedInvoiceNumber,
-                            (val) =>
-                                setState(() => _selectedInvoiceNumber = val),
+                        ]),
+                        if (_linkType == 'Budget')
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16.0),
+                            child: _buildDropdownField(
+                              'Budget',
+                              context
+                                  .watch<BudgetProvider>()
+                                  .budgets
+                                  .where((b) => b.spent < b.limit)
+                                  .map((b) => b.category)
+                                  .toList(),
+                              _selectedBudgetName,
+                              (val) =>
+                                  setState(() => _selectedBudgetName = val),
+                            ),
                           ),
-                        ),
-                      const SizedBox(height: 16),
-                      _responsiveRow([
-                        _buildDatePicker('Date *', _selectedDate, (date) {
-                          setState(() => _selectedDate = date);
-                        }),
-                        _buildTimePicker('Time', _selectedTime, (time) {
-                          setState(() => _selectedTime = time);
-                        }),
-                      ]),
-                      const SizedBox(height: 16),
-                      // budget/invoice association handled above via link type
-                      Text('Location',
-                          style: Theme.of(context).textTheme.bodySmall),
-                      const SizedBox(height: 4),
-                      _responsiveRow([
-                        TextFormField(
-                          controller: _locationController,
-                          decoration: InputDecoration(
-                            hintText: 'e.g., Main Street, City',
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8)),
+                        if (_linkType == 'Invoice')
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16.0),
+                            child: _buildDropdownField(
+                              'Invoice',
+                              context
+                                  .watch<ExpenseProvider>()
+                                  .invoices
+                                  .where(
+                                      (i) => i.status.toLowerCase() != 'paid')
+                                  .map((i) => i.invoiceNumber)
+                                  .toList(),
+                              _selectedInvoiceNumber,
+                              (val) =>
+                                  setState(() => _selectedInvoiceNumber = val),
+                            ),
                           ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed:
-                              _isCapturingLocation ? null : _captureLocation,
-                          icon: _isCapturingLocation
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.my_location, size: 18),
-                          label: const Text('Capture'),
-                        ),
-                      ]),
-                      const SizedBox(height: 16),
-                      _buildTextField(_notesController, 'Notes',
-                          maxLines: 3, hint: 'Additional notes...'),
-                      const SizedBox(height: 24),
-                      _responsiveRow([
-                        OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1E3A5F)),
-                          onPressed: _submit,
-                          child: const Text('Save Receipt',
-                              style: TextStyle(color: Colors.white)),
-                        ),
-                      ]),
-                    ],
+                        const SizedBox(height: 16),
+                        _responsiveRow([
+                          _buildDatePicker('Date *', _selectedDate, (date) {
+                            setState(() => _selectedDate = date);
+                          }),
+                          _buildTimePicker('Time', _selectedTime, (time) {
+                            setState(() => _selectedTime = time);
+                          }),
+                        ]),
+                        const SizedBox(height: 16),
+                        Text('Location',
+                            style: Theme.of(context).textTheme.bodySmall),
+                        const SizedBox(height: 4),
+                        _responsiveRow([
+                          TextFormField(
+                            controller: _locationController,
+                            decoration: InputDecoration(
+                              hintText: 'e.g., Main Street, City',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed:
+                                _isCapturingLocation ? null : _captureLocation,
+                            icon: _isCapturingLocation
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2))
+                                : const Icon(Icons.my_location, size: 18),
+                            label: const Text('Capture'),
+                          ),
+                        ]),
+                        const SizedBox(height: 16),
+                        _buildTextField(_notesController, 'Notes',
+                            maxLines: 3, hint: 'Additional notes...'),
+                        const SizedBox(height: 24),
+                        _responsiveRow([
+                          OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E3A5F)),
+                            onPressed: _submit,
+                            child: const Text('Save Receipt',
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ]),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

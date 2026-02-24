@@ -7,8 +7,11 @@ plugins {
 
 android {
     namespace = "com.example.expense_tracker"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // camera_android and other modern plugins require API level 36+
+    // override Flutter's default compileSdkVersion to avoid warnings
+    compileSdk = 36
+    // multiple plugins depend on NDK 27.0.12077973; use highest to satisfy them
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

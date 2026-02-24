@@ -124,16 +124,26 @@ class ExpenseProvider extends ChangeNotifier {
     }
 
     if (AppConstants.useMockApi) {
-      // simply prepend a fake id and add to list
+      // simply prepend a fake id and add to list; ensure all fields are preserved so
+      // budget/invoice links work when running with mock data.
       final created = Receipt(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         vendor: receipt.vendor,
+        title: receipt.title,
         amount: receipt.amount,
         category: receipt.category,
         date: receipt.date,
-        userId: receipt.userId,
+        time: receipt.time,
+        budgetId: receipt.budgetId,
         invoiceId: receipt.invoiceId,
         installments: receipt.installments,
+        notes: receipt.notes,
+        imageUrl: receipt.imageUrl,
+        location: receipt.location,
+        paymentMethod: receipt.paymentMethod,
+        userId: receipt.userId,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
       _receipts.insert(0, created);
       _maybeUpdateInvoiceStatus(created.invoiceId);

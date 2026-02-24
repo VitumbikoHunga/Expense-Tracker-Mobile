@@ -224,8 +224,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                       final screenWidth = constraints.maxWidth;
                       final columns = screenWidth > 600 ? 3 : 2;
                       final spacing = 12.0;
-                      final itemWidth =
+                      double rawWidth =
                           (screenWidth - (columns + 1) * spacing) / columns;
+                      final itemWidth = rawWidth > 0 ? rawWidth : screenWidth;
 
                       return Wrap(
                         spacing: spacing,
@@ -249,53 +250,58 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
 
   Widget _buildSummaryCard(BuildContext context, String title, String amount,
       IconData icon, Color color) {
-    return Container(
-      width: 180,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            amount,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: title == 'Total Spent'
-                  ? Colors.red
-                  : (title == 'Remaining' ? Colors.green : Colors.black),
+    // simple card that can shrink on narrow screens
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 120, maxWidth: 180),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.1),
+              spreadRadius: 1,
+              blurRadius: 10,
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Text(amount,
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: title == 'Total Spent'
+                              ? Colors.red
+                              : (title == 'Remaining'
+                                  ? Colors.green
+                                  : Colors.black)),
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -337,6 +343,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                       budget.category,
                       style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const Text('Monthly Budget',
                         style: TextStyle(color: Colors.grey, fontSize: 12)),
@@ -388,9 +395,12 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
               children: [
                 const Text('Spent',
                     style: TextStyle(color: Colors.grey, fontSize: 12)),
-                Text('MK${budget.spent.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 12)),
+                Flexible(
+                  child: Text('MK${budget.spent.toStringAsFixed(2)}',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -410,9 +420,12 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
               children: [
                 const Text('Budget',
                     style: TextStyle(color: Colors.grey, fontSize: 12)),
-                Text('MK${budget.limit.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 12)),
+                Flexible(
+                  child: Text('MK${budget.limit.toStringAsFixed(2)}',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -434,14 +447,17 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                       style: TextStyle(color: Colors.grey, fontSize: 12)),
                 )
               ]
-            : receipts
-                .map((r) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(r.vendor ?? r.title ?? 'Receipt'),
-                      subtitle: Text(
-                          'MK${r.amount.toStringAsFixed(2)}  •  ${DateFormat.yMMMd().format(r.date)}'),
-                    ))
-                .toList(),
+            : receipts.map((r) {
+                final display =
+                    (r.title?.isNotEmpty == true) ? r.title! : r.vendor;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(display, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                      'MK${r.amount.toStringAsFixed(2)}  •  ${DateFormat.yMMMd().format(r.date)}',
+                      overflow: TextOverflow.ellipsis),
+                );
+              }).toList(),
       ),
     );
   }

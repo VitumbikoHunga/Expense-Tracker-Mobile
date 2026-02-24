@@ -87,12 +87,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                           ),
                         )
                       : LayoutBuilder(builder: (context, constraints) {
-                          int crossCount = constraints.maxWidth > 600 ? 3 : 2;
                           return GridView.builder(
                             padding: const EdgeInsets.all(16),
                             gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: crossCount,
+                                const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 300,
                               mainAxisSpacing: 16,
                               crossAxisSpacing: 16,
                               childAspectRatio: 3 / 2,
@@ -130,6 +129,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                               invoice.invoiceNumber,
                                               style: const TextStyle(
                                                   fontWeight: FontWeight.bold),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                         ],
@@ -140,13 +140,17 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodySmall,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       const Spacer(),
-                                      Text(
-                                        'MK ${invoice.amount.toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: AppTheme.primaryColor),
+                                      Flexible(
+                                        child: Text(
+                                          'MK ${invoice.amount.toStringAsFixed(2)}',
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.primaryColor),
+                                        ),
                                       ),
                                       Text(
                                         DateFormat('MMM dd, yyyy')
@@ -316,143 +320,148 @@ class _GenerateInvoiceDialogState extends State<GenerateInvoiceDialog> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: double.infinity,
-        constraints:
-            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Generate Invoice',
-                      style: Theme.of(context).textTheme.headlineSmall),
-                  IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close)),
-                ],
+    return SafeArea(
+      child: Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Generate Invoice',
+                        style: Theme.of(context).textTheme.headlineSmall),
+                    IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close)),
+                  ],
+                ),
               ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _responsiveRow([
-                        _buildTextField(
-                            _invoiceNumberController, 'Invoice Number'),
-                        _buildDropdownField(
-                            'Status',
-                            [
-                              'Draft',
-                              'Pending',
-                              'Paid',
-                              'Installments',
-                              'Overdue'
-                            ],
-                            _status, (val) {
-                          setState(() => _status = val!);
+              const Divider(height: 1),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _responsiveRow([
+                          _buildTextField(
+                              _invoiceNumberController, 'Invoice Number'),
+                          _buildDropdownField(
+                              'Status',
+                              [
+                                'Draft',
+                                'Pending',
+                                'Paid',
+                                'Installments',
+                                'Overdue'
+                              ],
+                              _status, (val) {
+                            setState(() => _status = val!);
+                          }),
+                        ]),
+                        const SizedBox(height: 16),
+                        _responsiveRow([
+                          _buildTextField(
+                              _clientNameController, 'Client Name *',
+                              required: true),
+                          _buildTextField(
+                              _clientEmailController, 'Client Email'),
+                        ]),
+                        const SizedBox(height: 16),
+                        _responsiveRow([
+                          _buildDatePicker('Invoice Date *', _invoiceDate,
+                              (date) {
+                            setState(() => _invoiceDate = date);
+                          }),
+                          _buildDatePicker('Due Date', _dueDate, (date) {
+                            setState(() => _dueDate = date);
+                          }),
+                        ]),
+                        const SizedBox(height: 16),
+                        // time component for invoice date (similar to receipts)
+                        _buildTimePicker('Invoice Time', _invoiceDate, (time) {
+                          setState(() {
+                            _invoiceDate = DateTime(
+                              _invoiceDate.year,
+                              _invoiceDate.month,
+                              _invoiceDate.day,
+                              time.hour,
+                              time.minute,
+                            );
+                          });
                         }),
-                      ]),
-                      const SizedBox(height: 16),
-                      _responsiveRow([
-                        _buildTextField(_clientNameController, 'Client Name *',
-                            required: true),
-                        _buildTextField(_clientEmailController, 'Client Email'),
-                      ]),
-                      const SizedBox(height: 16),
-                      _responsiveRow([
-                        _buildDatePicker('Invoice Date *', _invoiceDate,
-                            (date) {
-                          setState(() => _invoiceDate = date);
-                        }),
-                        _buildDatePicker('Due Date', _dueDate, (date) {
-                          setState(() => _dueDate = date);
-                        }),
-                      ]),
-                      const SizedBox(height: 16),
-                      // time component for invoice date (similar to receipts)
-                      _buildTimePicker('Invoice Time', _invoiceDate, (time) {
-                        setState(() {
-                          _invoiceDate = DateTime(
-                            _invoiceDate.year,
-                            _invoiceDate.month,
-                            _invoiceDate.day,
-                            time.hour,
-                            time.minute,
-                          );
-                        });
-                      }),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Line Items',
-                              style: Theme.of(context).textTheme.titleMedium),
-                          TextButton.icon(
-                            onPressed: _addItem,
-                            icon: const Icon(Icons.add),
-                            label: const Text('Add Item'),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Line Items',
+                                style: Theme.of(context).textTheme.titleMedium),
+                            TextButton.icon(
+                              onPressed: _addItem,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add Item'),
+                            ),
+                          ],
+                        ),
+                        ..._items,
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            'Total: MK ${_totalAmount.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                        ],
-                      ),
-                      ..._items,
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          'Total: MK ${_totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text('Invoice Attachment (Photo)',
-                          style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 8),
-                      _buildAttachmentArea(),
-                      const SizedBox(height: 24),
-                      Text('Location',
-                          style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed:
-                            _isCapturingLocation ? null : _captureLocation,
-                        icon: _isCapturingLocation
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2))
-                            : const Icon(Icons.location_on_outlined),
-                        label: Text(_location ?? 'Capture Location'),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(_notesController, 'Notes', maxLines: 3),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _submit,
-                          child: const Text('Generate Invoice'),
+                        const SizedBox(height: 24),
+                        Text('Invoice Attachment (Photo)',
+                            style: Theme.of(context).textTheme.titleSmall),
+                        const SizedBox(height: 8),
+                        _buildAttachmentArea(),
+                        const SizedBox(height: 24),
+                        Text('Location',
+                            style: Theme.of(context).textTheme.titleSmall),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed:
+                              _isCapturingLocation ? null : _captureLocation,
+                          icon: _isCapturingLocation
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.location_on_outlined),
+                          label: Text(_location ?? 'Capture Location'),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        _buildTextField(_notesController, 'Notes', maxLines: 3),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _submit,
+                            child: const Text('Generate Invoice'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
