@@ -29,7 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _loadData() {
     final expenseProvider = context.read<ExpenseProvider>();
     final budgetProvider = context.read<BudgetProvider>();
-    
+
     expenseProvider.fetchReceipts();
     expenseProvider.fetchInvoices();
     budgetProvider.fetchBudgets();
@@ -50,8 +50,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Consumer2<ExpenseProvider, BudgetProvider>(
         builder: (context, expenseProvider, budgetProvider, _) {
-            final totalExpenses = expenseProvider.totalReceiptsAmount;
-            final totalEarnings = expenseProvider.totalInvoicesPaidAmount;
+          final totalExpenses = expenseProvider.totalReceiptsAmount;
+          final totalEarnings = expenseProvider.totalInvoicesPaidAmount;
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -71,8 +71,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                            Text('Track your expenses and earnings', style: TextStyle(color: Colors.grey)),
+                            Text('Dashboard',
+                                style: TextStyle(
+                                    fontSize: 24, fontWeight: FontWeight.bold)),
+                            Text('Track your expenses and earnings',
+                                style: TextStyle(color: Colors.grey)),
                           ],
                         ),
                       ),
@@ -83,76 +86,161 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // Top Stats Grid
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      return GridView.count(
+                      // use maxCrossAxisExtent for better scaling on narrow devices
+                      return GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: constraints.maxWidth > 600 ? 4 : 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.5,
-                        children: [
-                          _buildStatCard('Total Expenses', 'MK${totalExpenses.toStringAsFixed(2)}', Icons.account_balance_wallet, Colors.red),
-                          _buildStatCard('Total Earnings', 'MK${totalEarnings.toStringAsFixed(2)}', Icons.trending_up, Colors.green),
-                          _buildStatCard('Receipts', '${expenseProvider.receipts.length}', Icons.receipt_long, Colors.blue),
-                          _buildStatCard('Invoices', '${expenseProvider.invoices.length}', Icons.description, Colors.orange),
-                        ],
+                        padding: EdgeInsets.zero,
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 200,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 2.5,
+                        ),
+                        itemCount: 4,
+                        itemBuilder: (ctx, i) {
+                          switch (i) {
+                            case 0:
+                              return _buildStatCard(
+                                  'Total Expenses',
+                                  'MK${totalExpenses.toStringAsFixed(2)}',
+                                  Icons.account_balance_wallet,
+                                  Colors.red);
+                            case 1:
+                              return _buildStatCard(
+                                  'Total Earnings',
+                                  'MK${totalEarnings.toStringAsFixed(2)}',
+                                  Icons.trending_up,
+                                  Colors.green);
+                            case 2:
+                              return _buildStatCard(
+                                  'Receipts',
+                                  '${expenseProvider.receipts.length}',
+                                  Icons.receipt_long,
+                                  Colors.blue);
+                            default:
+                              return _buildStatCard(
+                                  'Invoices',
+                                  '${expenseProvider.invoices.length}',
+                                  Icons.description,
+                                  Colors.orange);
+                          }
+                        },
                       );
                     },
                   ),
                   const SizedBox(height: 32),
 
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Monthly Overview Chart
-                      Expanded(
-                        flex: 2,
-                        child: _buildSectionCard(
-                          title: 'Monthly Overview',
-                          child: SizedBox(
-                            height: 300,
-                            child: _buildLineChart(),
+                  LayoutBuilder(builder: (context, constraints) {
+                    if (constraints.maxWidth < 600) {
+                      // stack the chart and sidebar vertically on narrow screens
+                      return Column(
+                        children: [
+                          _buildSectionCard(
+                            title: 'Monthly Overview',
+                            child: SizedBox(
+                              height: constraints.maxWidth * 0.6,
+                              child: _buildLineChart(),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          _buildSectionCard(
+                            title: 'Budget Tracking',
+                            child: Column(
+                              children: [
+                                const SizedBox(height: 40),
+                                const Text('Set budgets to track your spending',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.grey)),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () => context.go('/budgets'),
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1E3A5F)),
+                                  child: const Text('Set Budgets',
+                                      style: TextStyle(color: Colors.white)),
+                                ),
+                                const SizedBox(height: 40),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          _buildSectionCard(
+                            title: 'Recent Activity',
+                            child: const Column(
+                              children: [
+                                SizedBox(height: 40),
+                                Text('No recent transactions',
+                                    style: TextStyle(color: Colors.grey)),
+                                SizedBox(height: 40),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    // wider screens use row layout
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Monthly Overview Chart
+                        Expanded(
+                          flex: 2,
+                          child: _buildSectionCard(
+                            title: 'Monthly Overview',
+                            child: SizedBox(
+                              height: 300,
+                              child: _buildLineChart(),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 24),
-                      // Budget and Activity Column (Sidebar style for larger screens)
-                      Expanded(
-                        flex: 1,
-                        child: Column(
-                          children: [
-                            _buildSectionCard(
-                              title: 'Budget Tracking',
-                              child: Column(
-                                children: [
-                                  const SizedBox(height: 40),
-                                  const Text('Set budgets to track your spending', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-                                  const SizedBox(height: 16),
-                                  ElevatedButton(
-                                    onPressed: () => context.go('/budgets'),
-                                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A5F)),
-                                    child: const Text('Set Budgets', style: TextStyle(color: Colors.white)),
-                                  ),
-                                  const SizedBox(height: 40),
-                                ],
+                        const SizedBox(width: 24),
+                        // Budget and Activity Column (Sidebar style for larger screens)
+                        Expanded(
+                          flex: 1,
+                          child: Column(
+                            children: [
+                              _buildSectionCard(
+                                title: 'Budget Tracking',
+                                child: Column(
+                                  children: [
+                                    const SizedBox(height: 40),
+                                    const Text(
+                                        'Set budgets to track your spending',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(color: Colors.grey)),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton(
+                                      onPressed: () => context.go('/budgets'),
+                                      style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              const Color(0xFF1E3A5F)),
+                                      child: const Text('Set Budgets',
+                                          style:
+                                              TextStyle(color: Colors.white)),
+                                    ),
+                                    const SizedBox(height: 40),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 24),
-                            _buildSectionCard(
-                              title: 'Recent Activity',
-                              child: const Column(
-                                children: [
-                                  SizedBox(height: 40),
-                                  Text('No recent transactions', style: TextStyle(color: Colors.grey)),
-                                  SizedBox(height: 40),
-                                ],
+                              const SizedBox(height: 24),
+                              _buildSectionCard(
+                                title: 'Recent Activity',
+                                child: const Column(
+                                  children: [
+                                    SizedBox(height: 40),
+                                    Text('No recent transactions',
+                                        style: TextStyle(color: Colors.grey)),
+                                    SizedBox(height: 40),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ),
@@ -162,13 +250,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Row(
         children: [
@@ -177,15 +271,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500)),
                 const SizedBox(height: 4),
-                Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(value,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8)),
             child: Icon(icon, color: color, size: 20),
           ),
         ],
@@ -204,7 +306,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
           child,
         ],
@@ -215,18 +319,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildLineChart() {
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+        gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (v) =>
+                FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
         titlesData: FlTitlesData(
           show: true,
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 const titles = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
                 if (value.toInt() < titles.length) {
-                  return Text(titles[value.toInt()], style: const TextStyle(color: Colors.grey, fontSize: 10));
+                  return Text(titles[value.toInt()],
+                      style: const TextStyle(color: Colors.grey, fontSize: 10));
                 }
                 return const SizedBox();
               },
@@ -236,19 +347,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 40,
-              getTitlesWidget: (value, meta) => Text('MK${value.toInt()}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+              getTitlesWidget: (value, meta) => Text('MK${value.toInt()}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 10)),
             ),
           ),
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: [const FlSpot(0, 0), const FlSpot(1, 0), const FlSpot(2, 0), const FlSpot(3, 0), const FlSpot(4, 0), const FlSpot(5, 0)],
+            spots: [
+              const FlSpot(0, 0),
+              const FlSpot(1, 0),
+              const FlSpot(2, 0),
+              const FlSpot(3, 0),
+              const FlSpot(4, 0),
+              const FlSpot(5, 0)
+            ],
             isCurved: true,
             color: const Color(0xFF10B981),
             barWidth: 3,
             dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(show: true, color: const Color(0xFF10B981).withValues(alpha: 0.1)),
+            belowBarData: BarAreaData(
+                show: true,
+                color: const Color(0xFF10B981).withValues(alpha: 0.1)),
           ),
         ],
       ),

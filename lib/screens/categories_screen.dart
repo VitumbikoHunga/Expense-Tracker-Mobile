@@ -217,29 +217,40 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     ),
                   )
                 else
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.2,
-                    ),
-                    itemCount: categoryProvider.categories.length,
-                    itemBuilder: (context, index) {
-                      final category = categoryProvider.categories[index];
-                      return _buildCategoryCard(
-                        category.name,
-                        Icons.label_outline,
-                        'Custom',
-                        onLongPress: () {
-                          // Existing delete logic can be kept here if needed
-                        },
-                      );
-                    },
-                  ),
+                  LayoutBuilder(builder: (context, constraints) {
+                    int columns;
+                    if (constraints.maxWidth > 800) {
+                      columns = 4;
+                    } else if (constraints.maxWidth > 600) {
+                      columns = 3;
+                    } else if (constraints.maxWidth > 400) {
+                      columns = 2;
+                    } else {
+                      columns = 1;
+                    }
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.2,
+                      ),
+                      itemCount: categoryProvider.categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categoryProvider.categories[index];
+                        return _buildCategoryCard(
+                          category.name,
+                          Icons.label_outline,
+                          'Custom',
+                          onLongPress: () {
+                            // Existing delete logic can be kept here if needed
+                          },
+                        );
+                      },
+                    );
+                  }),
               ],
             ),
           );

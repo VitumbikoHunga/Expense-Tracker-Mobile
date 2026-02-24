@@ -86,15 +86,29 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                             ],
                           ),
                         )
-                      : LayoutBuilder(builder: (context, constraints) {
+                      : LayoutBuilder(builder: (context, gridConstraints) {
+                          final width = gridConstraints.maxWidth;
+                          int crossAxisCount;
+                          double childAspectRatio;
+                          if (width > 800) {
+                            crossAxisCount = 4;
+                            childAspectRatio = 3 / 2;
+                          } else if (width > 600) {
+                            crossAxisCount = 2;
+                            childAspectRatio = 3 / 2;
+                          } else {
+                            crossAxisCount = 1;
+                            // make single column cards wider than tall
+                            childAspectRatio = 5 / 2;
+                          }
                           return GridView.builder(
                             padding: const EdgeInsets.all(16),
                             gridDelegate:
-                                const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 300,
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
                               mainAxisSpacing: 16,
                               crossAxisSpacing: 16,
-                              childAspectRatio: 3 / 2,
+                              childAspectRatio: childAspectRatio,
                             ),
                             itemCount: expenseProvider.invoices.length,
                             itemBuilder: (context, index) {
@@ -135,12 +149,24 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                         ],
                                       ),
                                       const SizedBox(height: 8),
-                                      Text(
-                                        '${invoice.clientName} • ${invoice.status}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                        overflow: TextOverflow.ellipsis,
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            invoice.clientName,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                          Text(
+                                            invoice.status,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                        ],
                                       ),
                                       const Spacer(),
                                       Flexible(
@@ -511,7 +537,7 @@ class _GenerateInvoiceDialogState extends State<GenerateInvoiceDialog> {
                     style: TextStyle(color: Colors.grey[600])),
               )
             : DropdownButtonFormField<String>(
-                initialValue: (value == null || value.isEmpty) ? null : value,
+                value: (value == null || value.isEmpty) ? null : value,
                 hint: const Text('Select'),
                 items: options
                     .map((e) => DropdownMenuItem(value: e, child: Text(e)))

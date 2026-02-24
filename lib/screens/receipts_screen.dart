@@ -240,24 +240,31 @@ class _ReceiptsScreenState extends State<ReceiptsScreen> {
                                   receipt.title ?? receipt.vendor,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                subtitle: Text(
-                                  '${receipt.category} • ${DateFormat('MMM dd, yyyy').format(receipt.date)}',
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Flexible(
-                                      child: Text(
-                                        'MK ${receipt.amount.toStringAsFixed(2)}',
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: AppTheme.primaryColor,
-                                        ),
+                                    Text(receipt.category,
+                                        overflow: TextOverflow.ellipsis),
+                                    Text(
+                                      DateFormat('MMM dd, yyyy')
+                                          .format(receipt.date),
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                                trailing: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'MK ${receipt.amount.toStringAsFixed(2)}',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.primaryColor,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
                                     PopupMenuButton<String>(
                                       onSelected: (value) async {
                                         switch (value) {
@@ -846,7 +853,7 @@ class _AddReceiptDialogState extends State<AddReceiptDialog> {
       final success = await expenseProvider.createReceipt(receipt);
 
       if (!mounted) return;
-      
+
       final budgetProvider = context.read<BudgetProvider>();
 
       if (success) {
