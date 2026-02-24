@@ -30,7 +30,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     showDialog(
       context: context,
       builder: (context) =>
-          GenerateInvoiceDialog(), // fresh instance to reset fields
+          const GenerateInvoiceDialog(), // fresh instance to reset fields
     );
   }
 
@@ -167,6 +167,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                                 await expenseProvider
                                                     .sendInvoiceReceipt(
                                                         invoice.id!);
+                                            if (!context.mounted) return;
                                             if (success) {
                                               ScaffoldMessenger.of(context)
                                                   .showSnackBar(const SnackBar(
@@ -510,7 +511,7 @@ class _GenerateInvoiceDialogState extends State<GenerateInvoiceDialog> {
                     style: TextStyle(color: Colors.grey[600])),
               )
             : DropdownButtonFormField<String>(
-                value: (value == null || value.isEmpty) ? null : value,
+                initialValue: (value == null || value.isEmpty) ? null : value,
                 hint: const Text('Select'),
                 items: options
                     .map((e) => DropdownMenuItem(value: e, child: Text(e)))

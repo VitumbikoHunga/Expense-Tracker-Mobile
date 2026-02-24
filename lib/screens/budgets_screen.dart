@@ -93,7 +93,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
               if (!mounted) return;
 
               if (success) {
-                Navigator.of(dialogContext).pop();
+                Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Budget set successfully')),
                 );
@@ -224,9 +224,9 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                       final screenWidth = constraints.maxWidth;
                       final columns = screenWidth > 600 ? 3 : 2;
                       final spacing = 12.0;
-                      double rawWidth =
+                      // calculate a width per item taking into account spacing
+                      final itemWidth =
                           (screenWidth - (columns + 1) * spacing) / columns;
-                      final itemWidth = rawWidth > 0 ? rawWidth : screenWidth;
 
                       return Wrap(
                         spacing: spacing,
@@ -447,17 +447,14 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                       style: TextStyle(color: Colors.grey, fontSize: 12)),
                 )
               ]
-            : receipts.map((r) {
-                final display =
-                    (r.title?.isNotEmpty == true) ? r.title! : r.vendor;
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(display, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(
-                      'MK${r.amount.toStringAsFixed(2)}  •  ${DateFormat.yMMMd().format(r.date)}',
-                      overflow: TextOverflow.ellipsis),
-                );
-              }).toList(),
+            : receipts
+                .map((r) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(r.vendor ?? r.title ?? 'Receipt'),
+                      subtitle: Text(
+                          'MK${r.amount.toStringAsFixed(2)}  •  ${DateFormat.yMMMd().format(r.date)}'),
+                    ))
+                .toList(),
       ),
     );
   }
